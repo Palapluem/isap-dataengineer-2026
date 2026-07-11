@@ -168,7 +168,73 @@ def build_notebook() -> nbf.NotebookNode:
         ),
         md(
             """
-            ## 4. OCSC EDA
+            ## 4. EDA Findings to Engineering Decisions
+
+            ตารางนี้สรุปว่า observation จาก EDA ถูกแปลงเป็น design/pipeline decision อย่างไร เพื่อให้เห็นว่า notebook ไม่ได้เป็นแค่การดูไฟล์ Excel แต่เป็นหลักฐานของการออกแบบ data warehouse และ pipeline
+            """
+        ),
+        code(
+            r"""
+            eda_decisions = pd.DataFrame(
+                [
+                    {
+                        "finding": "workbook มี cover/index/report decoration",
+                        "pipeline_decision": "เก็บ raw.workbook_sheets และ raw.cells เพื่อ audit ก่อนทำ staging",
+                    },
+                    {
+                        "finding": "sheet มี header หลายแถวและ newline ในชื่อ column",
+                        "pipeline_decision": "normalize/flatten header ใน clean.py และ extractor",
+                    },
+                    {
+                        "finding": "CGD มีงบประจำ/งบลงทุน/รวม ในแนวกว้าง",
+                        "pipeline_decision": "unpivot เป็น expense_category เพื่อให้ query ง่าย",
+                    },
+                    {
+                        "finding": "CGD มีทั้งมุมเบิกจ่ายและใช้จ่าย",
+                        "pipeline_decision": "แยกด้วย report_type เพื่อไม่ผสม metric คนละนิยาม",
+                    },
+                    {
+                        "finding": "OCSC มีหลายมิติกำลังพลใน workbook เดียว",
+                        "pipeline_decision": "ทำ fact แบบ metric-driven ด้วย metric_name และ metric_group",
+                    },
+                    {
+                        "finding": "OCSC-CGD ไม่มี agency code กลางครบทุก sheet",
+                        "pipeline_decision": "demo join ด้วย normalized Thai name; production ควรมี master agency mapping",
+                    },
+                ]
+            )
+            display(eda_decisions)
+
+            cross_dataset_notes = pd.DataFrame(
+                [
+                    {
+                        "topic": "agency/ministry name",
+                        "risk": "join แล้วหลุดหรือจับคู่ผิด",
+                        "current_handling": "normalize whitespace และ demo exact-name join",
+                    },
+                    {
+                        "topic": "time grain",
+                        "risk": "OCSC เป็น snapshot รายปี แต่ CGD เป็น as-of date",
+                        "current_handling": "เก็บ fiscal_year, fiscal_year_be และ as_of_date แยกกัน",
+                    },
+                    {
+                        "topic": "unit",
+                        "risk": "headcount เทียบกับ million baht โดยตรงไม่ได้",
+                        "current_handling": "แยก fact table และระบุ column unit ชัดเจน",
+                    },
+                    {
+                        "topic": "total/subtotal rows",
+                        "risk": "เกิด double count ใน query",
+                        "current_handling": "tag entity_type และให้ analyst filter ได้",
+                    },
+                ]
+            )
+            display(cross_dataset_notes)
+            """
+        ),
+        md(
+            """
+            ## 5. OCSC EDA
 
             OCSC เป็น workbook ที่ซับซ้อนกว่า เพราะมีหลาย report sections ในไฟล์เดียว ตารางด้านล่างแสดง sheet ที่ใหญ่ที่สุดและ sheet ที่มี merged/formula cells สูง
             """
@@ -249,7 +315,7 @@ def build_notebook() -> nbf.NotebookNode:
         ),
         md(
             """
-            ## 5. CGD EDA
+            ## 6. CGD EDA
 
             CGD โครงสร้างค่อนข้างสม่ำเสมอ แต่ต้องอ่านความหมายทางธุรกิจให้ถูก: `เบิกจ่าย` และ `ใช้จ่าย` ไม่ใช่ metric เดียวกัน
             """
@@ -300,7 +366,7 @@ def build_notebook() -> nbf.NotebookNode:
         ),
         md(
             """
-            ## 6. Extracted Rows and Transform Validation
+            ## 7. Extracted Rows and Transform Validation
 
             ส่วนนี้เรียก extractor จริงจาก pipeline เพื่อให้เห็นว่า EDA เชื่อมกับ implementation ไม่ใช่แค่การดู Excel ด้วยตา
             """
@@ -393,7 +459,7 @@ def build_notebook() -> nbf.NotebookNode:
         ),
         md(
             """
-            ## 7. Data Quality Checks
+            ## 8. Data Quality Checks
 
             DQ checks ใช้กฎที่ตรงกับ business grain เช่น CGD ต้องรวม `entity_code` ใน duplicate key เพราะบางหน่วยงานชื่อซ้ำได้
             """
@@ -406,7 +472,7 @@ def build_notebook() -> nbf.NotebookNode:
         ),
         md(
             """
-            ## 8. Takeaways
+            ## 9. Takeaways
 
             - ทั้ง 2 datasets ถูกแยก source, extractor, staging และ mart ชัดเจน
             - OCSC ต้องระวัง report workbook structure จึงใช้แนว raw-first และ normalize เฉพาะ grain ที่ชัดเจนก่อน

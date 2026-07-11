@@ -7,6 +7,40 @@
 - OCSC: `datasets\ocsc\thai-gov-manpower-2567.4.xlsx` มี 68 sheets
 - CGD: `datasets\cgd\2026.07.03.xlsx` มี 15 sheets
 
+## ภาพรวมสำหรับกรรมการ
+
+```mermaid
+flowchart LR
+    A[Excel report workbook] --> B[Workbook profiling]
+    B --> C[Identify sheet role and header rows]
+    C --> D[Raw cell capture for audit]
+    C --> E[Normalize selected analytical sheets]
+    E --> F[Data quality checks]
+    F --> G[Warehouse facts and dimensions]
+```
+
+สาระสำคัญจาก EDA คือ source ทั้ง 2 ชุดไม่ใช่ flat table ที่อ่านเข้า warehouse ได้ทันที แต่เป็น Excel report สำหรับมนุษย์อ่าน จึงต้องมี profiling ก่อน extraction เพื่อรู้ว่า sheet ไหนเป็น cover/index/report, sheet ไหนมี analytical grain ชัดเจน, header อยู่แถวไหน, และมี merged cells/formula/subtotal ปะปนมากแค่ไหน
+
+| ประเด็นที่ตรวจ | OCSC | CGD | ผลต่อการออกแบบ pipeline |
+|---|---|---|---|
+| จำนวน sheet | 68 sheets | 15 sheets | ต้องมี sheet inventory และเลือก normalize เฉพาะ sheet ที่ grain ชัด |
+| รูปแบบ workbook | report หลายหมวด, cover/index, wide tables | report งบประมาณที่โครงสร้างค่อนข้างซ้ำกัน | OCSC ต้องเน้น audit raw cells; CGD normalize ได้เป็น long fact ง่ายกว่า |
+| Header | หลาย sheet มี multi-row header และตำแหน่ง header ต่างกัน | header หลายชั้น โดยเฉพาะกลุ่มเบิกจ่าย/ใช้จ่าย | ต้อง flatten header และ map synonyms |
+| Merged cells | พบมากใน sheet รายงาน | พบมากใน sheet ใช้จ่ายบางประเภท | ต้อง fill-down/รักษา hierarchy label |
+| Formula cells | มีบาง sheet ใช้สูตรสรุป | summary sheet มีสูตร | ไม่ใช้ formula เป็น source หลักโดยไม่เก็บ raw evidence |
+| Total/subtotal | ปะปนกับ detail rows | ปะปนในหลาย sheet | ต้อง tag `entity_type` และระวัง double count |
+
+## EDA Findings to Engineering Decisions
+
+| Finding | Decision |
+|---|---|
+| workbook มี cover/index และ report decoration | เก็บ `raw.workbook_sheets` และ `raw.cells` เพื่อ audit ก่อนทำ staging |
+| sheet มี header หลายแถวและ newline ในชื่อ column | สร้าง helper normalize header ใน `clean.py` |
+| CGD มีงบประจำ/งบลงทุน/รวม ในแนวกว้าง | unpivot เป็น `expense_category` เพื่อให้ query ง่าย |
+| CGD มีทั้งมุมเบิกจ่ายและใช้จ่าย | แยกด้วย `report_type` เพื่อไม่ผสม metric คนละนิยาม |
+| OCSC มีหลายมิติกำลังพลใน workbook เดียว | ทำ fact แบบ metric-driven ด้วย `metric_name` และ `metric_group` |
+| join OCSC-CGD ไม่มี agency code กลางครบทุก sheet | demo join ใช้ normalized Thai name แต่รายงานระบุ caveat ว่า production ควรมี master agency mapping |
+
 ## OCSC government workforce statistics
 
 | sheet | rows | cols | merged | formulas | blank rows | guessed header | type |
@@ -103,6 +137,15 @@
 | 15.กองทุนฯ | 46 | 12 | 14 | 0 | 1 | 4 | budget_execution |
 
 ปัญหาสำคัญที่พบ: ตารางมีหัว 2 ชั้น, มีทั้งมุมมองเบิกจ่ายและใช้จ่าย, ค่าเงินเป็นล้านบาท, percent อยู่ในรูป 0-100, มีรหัสหน่วยงานเฉพาะบาง sheet และมีช่องว่างจาก merged cells ต้อง flatten header และ unpivot current/investment/total เป็น long rows
+
+## Cross-dataset Considerations
+
+| ประเด็น | ความเสี่ยง | แนวทางในงานนี้ | แนวทาง production |
+|---|---|---|---|
+| agency/ministry name ไม่ตรงกัน 100% | join แล้วหลุดหรือจับคู่ผิด | normalize whitespace และ demo exact-name join | ทำ master agency mapping พร้อม alias/effective date |
+| เวลาของข้อมูลต่างกัน | OCSC เป็น snapshot รายปี ส่วน CGD เป็น as-of date | เก็บ `fiscal_year`, `fiscal_year_be`, `as_of_date` แยกกัน | ทำ dim_date และระบุ reporting cutoff ชัด |
+| หน่วยวัดต่างกัน | headcount เทียบกับ million baht โดยตรงไม่ได้ | เก็บ measure แยก fact table | สร้าง semantic layer สำหรับ ratio ที่นิยามแล้วเท่านั้น |
+| total/subtotal ปะปน detail | double count ใน mart/query | tag `entity_type` และให้ query filter ได้ | เพิ่ม reconciliation DQ ระหว่าง subtotal/detail |
 
 ## Cleaning Strategy
 

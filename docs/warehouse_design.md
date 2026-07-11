@@ -6,6 +6,15 @@ Excel ต้นทางเป็น report workbook ไม่ใช่ normaliz
 
 DuckDB ถูกเลือกเพราะรัน local demo ได้เร็ว ไม่ต้องตั้ง database server และรองรับ SQL analytical query ได้ดี
 
+## What Reviewers Should Notice
+
+warehouse design นี้ตั้งใจโชว์ 4 เรื่องหลัก:
+
+1. Reproducibility: source Excel + code สามารถ rebuild warehouse ได้ ไม่ต้อง commit `.duckdb`
+2. Auditability: raw layer เก็บ source metadata, sheet inventory และ cell-level evidence
+3. Analytical usability: mart layer แปลง report-style Excel เป็น fact/dimension ที่ query ได้
+4. Extensibility: ถ้า production มี source ใหม่หรือ fiscal year ใหม่ สามารถเพิ่ม ingestion run และ mapping ได้โดยไม่ทิ้ง design เดิม
+
 ## Architecture
 
 ```mermaid
@@ -22,6 +31,26 @@ flowchart LR
     M --> BI[Demo SQL / BI tools]
 ```
 
+## Rebuild and Lineage Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI as isap_pipeline CLI
+    participant Excel as Source Excel files
+    participant DuckDB as DuckDB warehouse
+    participant Docs as Reports / notebook
+
+    User->>CLI: profile
+    CLI->>Excel: inspect sheets, headers, merged cells
+    CLI->>Docs: write profile summary/report
+    User->>CLI: run
+    CLI->>Excel: extract raw cells and normalized rows
+    CLI->>DuckDB: load raw/staging/mart by source_file_hash
+    User->>CLI: demo
+    CLI->>DuckDB: run analytical SQL
+```
+
 ## Layer Design
 
 | Layer | Purpose | Examples |
@@ -29,6 +58,15 @@ flowchart LR
 | raw | เก็บหลักฐานจาก source โดยไม่เสีย context | `raw.source_files`, `raw.workbook_sheets`, `raw.cells` |
 | staging | clean/normalize Excel report เป็นตารางที่ query ได้ | `staging.cgd_budget_execution`, `staging.ocsc_workforce` |
 | mart | star schema สำหรับ analyst | `mart.fact_budget_execution`, `mart.fact_government_manpower`, `mart.dim_agency` |
+
+## Analytical Questions Supported
+
+| Question | Main table/view | Notes |
+|---|---|---|
+| หน่วยงานใดมีกำลังพลสูงสุด | `mart.fact_government_manpower` | filter ด้วย `metric_name`, `entity_type` |
+| กระทรวง/หน่วยงานใดเบิกจ่ายต่ำ | `mart.fact_budget_execution` | ใช้ `disbursement_pct`, `expense_category`, `report_type` |
+| ใช้จ่ายเทียบเป้ารายเดือนต่างจากเป้าเท่าไร | `mart.fact_budget_execution` | ใช้ `monthly_target_gap_pct` |
+| หน่วยงานที่ match กันระหว่าง OCSC และ CGD มีภาพ workforce vs budget อย่างไร | `mart.dim_agency` + fact tables | demo ใช้ exact normalized Thai name; production ควรใช้ master mapping |
 
 ## Star Schema
 
@@ -103,6 +141,17 @@ erDiagram
 | `expenditure_million_baht` | ยอดใช้จ่าย หน่วยล้านบาท |
 | `headcount` | จำนวนคน |
 | `metric_name` | ชื่อ metric เช่น `civil_servant`, `gender_female`, `education_master` |
+
+## Data Quality and Operations
+
+| Control | Implemented in this repo | Why it matters |
+|---|---|---|
+| idempotent load | `load.py` delete-insert by `source_file_hash` | รันซ้ำแล้วไม่ duplicate |
+| source lineage | `raw.source_files`, `source_file_hash`, `ingestion_run_id` | trace กลับไปหาไฟล์ต้นทางได้ |
+| sheet inventory | `raw.workbook_sheets` | ตรวจ structure change ของ workbook ได้ |
+| core DQ checks | `dq.py`, `mart.fact_data_quality_issue` | ตรวจ percent range, non-negative, duplicate grain |
+| monthly source check | `discovery.py`, `.github/workflows/monthly-check.yml` | ตรวจว่ามี dataset ใหม่หรือ source unavailable |
+| CI | `.github/workflows/ci.yml` | ให้ tests/lint ทำงานบน GitHub |
 
 ## Design Tradeoffs
 

@@ -112,12 +112,45 @@ def _insert(con: duckdb.DuckDBPyConnection, table: str, df: pd.DataFrame) -> int
         if col not in prepared.columns:
             prepared[col] = None
     prepared = prepared[cols]
+    try:
+        _insert_via_registered_view(con, table, prepared, cols)
+    except duckdb.NotImplementedException as exc:
+        if "Data type 'str' not recognized" not in str(exc):
+            raise
+        _insert_records(con, table, prepared, cols)
+    return len(prepared)
+
+def _insert_via_registered_view(
+    con: duckdb.DuckDBPyConnection,
+    table: str,
+    prepared: pd.DataFrame,
+    cols: list[str],
+) -> None:
     view_name = "df_to_insert"
     con.register(view_name, prepared)
     quoted_cols = ", ".join(cols)
-    con.execute(f"INSERT INTO {table} ({quoted_cols}) SELECT {quoted_cols} FROM {view_name}")
-    con.unregister(view_name)
-    return len(prepared)
+    try:
+        con.execute(f"INSERT INTO {table} ({quoted_cols}) SELECT {quoted_cols} FROM {view_name}")
+    finally:
+        con.unregister(view_name)
+
+def _insert_records(
+    con: duckdb.DuckDBPyConnection,
+    table: str,
+    prepared: pd.DataFrame,
+    cols: list[str],
+) -> None:
+    placeholders = ", ".join(["?"] * len(cols))
+    quoted_cols = ", ".join(cols)
+    records = [tuple(_python_scalar(value) for value in row) for row in prepared.itertuples(index=False, name=None)]
+    con.executemany(f"INSERT INTO {table} ({quoted_cols}) VALUES ({placeholders})", records)
+
+def _python_scalar(value: object) -> object:
+    if pd.isna(value):
+        return None
+    if hasattr(value, "item"):
+        return value.item()
+    return value
 
 def _table_columns(con: duckdb.DuckDBPyConnection, table: str) -> list[str]:
     schema, table_name = table.split(".", 1)

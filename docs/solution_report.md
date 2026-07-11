@@ -1,5 +1,7 @@
 # Solution Report
 
+สำหรับคำตอบที่เรียงตรงตามข้อสอบข้อ 1-4 ดู `docs/assignment_answers.md` เอกสารนี้เป็น technical summary ของ implementation และหลักฐานประกอบ
+
 ## Executive Summary
 
 โซลูชันนี้สร้าง data pipeline ที่รันได้จริงสำหรับข้อมูลกำลังพลภาครัฐของสำนักงาน ก.พ. และข้อมูลผลการเบิกจ่าย/ใช้จ่ายงบประมาณของกรมบัญชีกลาง โดยออกแบบเป็น 3 layer คือ raw, staging และ mart บน DuckDB เพื่อให้ demo ได้ง่ายในวันสัมภาษณ์

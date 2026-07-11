@@ -1,5 +1,7 @@
 # Submission Overview
 
+เริ่มอ่านคำตอบตามข้อสอบได้ที่ `docs/assignment_answers.md` และใช้เอกสารนี้เป็นแผนที่ภาพรวมของ artifacts
+
 หน้านี้เป็นหน้าเปิดอ่านเร็วสำหรับ reviewer/interviewer เพื่อเห็นภาพว่า repo นี้ตอบโจทย์หลักครบอย่างไร และไฟล์ไหนควรเป็น source artifact หรือ generated artifact
 
 ## 4 Core Deliverables
@@ -21,7 +23,7 @@ flowchart TD
 
     D --> D1[profile command]
     D --> D2[run command]
-    D --> D3[check-new command]
+    D --> D3[check-new and sync-latest]
     D --> D4[demo command and tests]
 
     E --> E1[data contract]
@@ -76,4 +78,3 @@ python -m isap_pipeline run --ocsc "datasets/ocsc/thai-gov-manpower-2567.4.xlsx"
 ```
 
 ถ้าต้องการส่ง demo แบบ offline มาก ๆ สามารถแนบ `.duckdb` แยกเป็น release artifact หรือไฟล์ zip ส่วนตัวได้ แต่ไม่ควร commit ลง repo หลัก เพราะจะทำให้ repo หนักขึ้นและเสี่ยงมี stale output ที่ไม่ตรงกับ code ล่าสุด
-

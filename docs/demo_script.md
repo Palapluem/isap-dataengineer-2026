@@ -69,9 +69,26 @@ Expected status:
 python -m pytest
 ```
 
-Expected: all tests passed
+Expected: 13 tests passed
 
-## 7. Optional EDA Notebook
+## 7. Optional Sync Latest
+
+ใช้เมื่อ official pages เปิดเผย direct file URL จาก environment ที่รัน:
+
+```powershell
+python -m isap_pipeline sync-latest --warehouse "data/warehouse/isap.duckdb"
+```
+
+Expected:
+
+- discover และ download OCSC/CGD ให้ครบก่อน load
+- รองรับ `.xlsx`, `.xls` และ ZIP ที่มี Excel
+- update `config/source_manifest.json` หลัง load สำเร็จ
+- คืน exit code 1 และไม่ partial load หาก source ใด source หนึ่ง unavailable
+
+ไม่แนะนำให้ใช้คำสั่งนี้เป็นเส้นทางหลักของ live demo เพราะขึ้นกับเว็บไซต์ภายนอก
+
+## 8. Optional EDA Notebook
 
 ```powershell
 python -m nbconvert --execute --to notebook --inplace "notebooks/01_eda_data_profiling.ipynb"

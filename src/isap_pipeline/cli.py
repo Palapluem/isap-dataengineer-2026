@@ -14,6 +14,7 @@ import pandas as pd
 from isap_pipeline.clean import fiscal_year_from_filename
 from isap_pipeline.config import load_pipeline_config, load_sources
 from isap_pipeline.discovery import compare_with_manifest, discover_sources, save_manifest
+from isap_pipeline.downloader import download_file, extract_first_excel_from_zip
 from isap_pipeline.dq import run_data_quality_checks
 from isap_pipeline.excel_inspector import inspect_workbook
 from isap_pipeline.extract_cgd import extract_cgd_workbook
@@ -43,6 +44,12 @@ def main(argv: list[str] | None = None) -> int:
     check = subparsers.add_parser("check-new", help="Check official source pages for new files.")
     check.add_argument("--save-manifest", action="store_true", help="Persist discovered metadata.")
 
+    sync = subparsers.add_parser(
+        "sync-latest", help="Discover, download, and ingest the latest source workbooks."
+    )
+    sync.add_argument("--download-dir", default="data/raw", help="Directory for downloaded files.")
+    sync.add_argument("--warehouse", default="data/warehouse/isap.duckdb", help="DuckDB path.")
+
     demo = subparsers.add_parser("demo", help="Run sample analytical queries.")
     demo.add_argument("--warehouse", default="data/warehouse/isap.duckdb", help="DuckDB path.")
 
@@ -55,6 +62,8 @@ def main(argv: list[str] | None = None) -> int:
         return command_run(Path(args.ocsc), Path(args.cgd), Path(args.warehouse))
     if args.command == "check-new":
         return command_check_new(save=args.save_manifest)
+    if args.command == "sync-latest":
+        return command_sync_latest(Path(args.download_dir), Path(args.warehouse))
     if args.command == "demo":
         return command_demo(Path(args.warehouse))
     return 2
@@ -150,6 +159,45 @@ def command_check_new(save: bool = False) -> int:
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
+
+def command_sync_latest(download_dir: Path, warehouse_path: Path) -> int:
+    cfg = load_pipeline_config()
+    discovered = discover_sources()
+    unavailable = [item for item in discovered if item.status != "discovered" or not item.file_url]
+    if unavailable:
+        result = compare_with_manifest(discovered, cfg.manifest_path)
+        cfg.source_check_output.parent.mkdir(parents=True, exist_ok=True)
+        cfg.source_check_output.write_text(
+            json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        LOGGER.error("Cannot sync latest files because one or more source pages are unavailable.")
+        return 1
+
+    downloaded: dict[str, Path] = {}
+    for item in discovered:
+        dataset_dir = download_dir / item.dataset_name
+        payload = download_file(item.file_url, dataset_dir)
+        source_path = Path(payload["path"])
+        if source_path.suffix.lower() == ".zip":
+            source_path = extract_first_excel_from_zip(source_path, dataset_dir)
+        if source_path.suffix.lower() not in {".xlsx", ".xls"}:
+            raise ValueError(f"Unsupported downloaded source file: {source_path}")
+        downloaded[item.dataset_name] = source_path
+
+    required = {"ocsc_government_manpower", "cgd_budget_execution"}
+    missing = required.difference(downloaded)
+    if missing:
+        raise ValueError(f"Missing required discovered datasets: {sorted(missing)}")
+
+    exit_code = command_run(
+        downloaded["ocsc_government_manpower"],
+        downloaded["cgd_budget_execution"],
+        warehouse_path,
+    )
+    if exit_code == 0:
+        save_manifest(discovered, cfg.manifest_path)
+    return exit_code
 
 def command_demo(warehouse_path: Path) -> int:
     if not warehouse_path.exists():

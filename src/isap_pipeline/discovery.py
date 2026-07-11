@@ -114,14 +114,14 @@ def compare_with_manifest(discovered: list[DiscoveredFile], manifest_path: str |
         if item.status == "discovered":
             if not prior:
                 status = "new_data_found"
-            elif (
-                prior.get("file_url") == item.file_url
-                and prior.get("filename") == item.filename
-                and prior.get("publish_date") == item.publish_date
-            ):
-                status = "no_new_data"
             else:
-                status = "new_data_found"
+                comparable_fields = [
+                    field
+                    for field in ("file_url", "filename", "publish_date")
+                    if prior.get(field) is not None
+                ]
+                changed = any(prior.get(field) != current.get(field) for field in comparable_fields)
+                status = "new_data_found" if changed or not comparable_fields else "no_new_data"
         current["status"] = status
         results.append(current)
     return {"checked_at": utc_now_iso(), "sources": results}

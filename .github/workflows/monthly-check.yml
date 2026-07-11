@@ -17,3 +17,10 @@ jobs:
         run: python -m pip install -e ".[dev]"
       - name: Check official sources
         run: python -m isap_pipeline check-new
+      - name: Upload source-check evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-check-${{ github.run_number }}
+          path: data/processed/source_check_latest.json
+          if-no-files-found: warn

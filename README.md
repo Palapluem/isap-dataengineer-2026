@@ -91,8 +91,16 @@ python scripts/build_eda_notebook.py
 python -m isap_pipeline check-new
 ```
 
-คำสั่งนี้ตรวจหน้าเว็บทางการตาม `config/sources.yml` และเทียบกับ manifest ที่ `data/processed/source_manifest.json` ถ้า network ใช้ไม่ได้จะคืน `source_unavailable` พร้อม error ที่ตรวจสอบได้
+คำสั่งนี้ตรวจหน้าเว็บทางการตาม `config/sources.yml` และเทียบกับ baseline ที่ `config/source_manifest.json` ถ้า network ใช้ไม่ได้จะคืน `source_unavailable` พร้อม error ที่ตรวจสอบได้
 ผลการตรวจล่าสุดจะถูกบันทึกไว้ที่ `data/processed/source_check_latest.json` เพื่อใช้เป็นหลักฐานประกอบ demo
+
+หากหน้าเว็บเปิดเผย direct file URL และต้องการดาวน์โหลดพร้อม ingest release ล่าสุด:
+
+```powershell
+python -m isap_pipeline sync-latest --warehouse "data/warehouse/isap.duckdb"
+```
+
+คำสั่งนี้จะอัปเดต manifest หลังจากดาวน์โหลดทั้งสอง source และ load สำเร็จเท่านั้น
 
 ## Inspect DuckDB
 
@@ -115,13 +123,17 @@ python -m pytest
 
 ## Scoring Checklist
 
+- Direct answers for Tasks 1-4: ดู `docs/assignment_answers.md`
 - Submission overview with visuals: ดู `docs/submission_overview.md`
 - Data Warehouse design: ดู `docs/warehouse_design.md`
+- Data dictionary: ดู `docs/data_dictionary.md`
 - EDA & Data Profiling: ดู `docs/data_profiling_report.md`
 - Automated Data Pipeline: ดู `src/isap_pipeline/`, `sql/`, และ demo commands ด้านบน
 - Monthly new-data check: ดู `src/isap_pipeline/discovery.py` และ `.github/workflows/monthly-check.yml`
 - Junior recommendation: ดู `docs/junior_recommendations.md`
 - Demo script: ดู `docs/demo_script.md`
+- Code walkthrough: ดู `docs/code_walkthrough.md`
+- Presentation guide: ดู `docs/presentation_guide.md`
 - Submission readiness: ดู `docs/readiness_checklist.md`
 
 ## Artifact Policy

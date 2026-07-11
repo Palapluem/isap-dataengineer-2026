@@ -1,0 +1,26 @@
+{
+  "ocsc_government_manpower": {
+    "source_name": "OCSC government workforce statistics",
+    "dataset_name": "ocsc_government_manpower",
+    "status": "baseline",
+    "source_page_url": "https://www.ocsc.go.th/strategy-policy-work-plan/reports-statistics/government-workforce-statistics-report/2021-present-workforce-statistics/",
+    "title": "Government workforce statistics 2567",
+    "file_url": null,
+    "filename": "thai-gov-manpower-2567.4.xlsx",
+    "publish_date": null,
+    "checked_at": null,
+    "message": "Submission baseline derived from the provided source workbook."
+  },
+  "cgd_budget_execution": {
+    "source_name": "CGD budget disbursement statistics",
+    "dataset_name": "cgd_budget_execution",
+    "status": "baseline",
+    "source_page_url": "https://www.cgd.go.th/cs/internet/internet/%E0%B8%82%E0%B9%88%E0%B8%B2%E0%B8%A7%E0%B8%AA%E0%B8%96%E0%B8%B4%E0%B8%95%E0%B8%B4.html",
+    "title": "Budget execution as of 2026-07-03",
+    "file_url": null,
+    "filename": "2026.07.03.xlsx",
+    "publish_date": "2026-07-03",
+    "checked_at": null,
+    "message": "Submission baseline derived from the provided source workbook."
+  }
+}

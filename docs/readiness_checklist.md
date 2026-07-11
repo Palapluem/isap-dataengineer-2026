@@ -15,11 +15,13 @@
 | Visual submission overview | ครบ | `docs/submission_overview.md` |
 | Data Warehouse design 20 คะแนน | ครบ | `docs/warehouse_design.md`, `sql/001_create_raw.sql`, `sql/002_create_staging.sql`, `sql/003_create_marts.sql` |
 | EDA & Data Profiling 20 คะแนน | ครบ | `notebooks/01_eda_data_profiling.ipynb`, `docs/data_profiling_report.md`, `data/processed/profile_summary.json` |
-| Automated pipeline 60 คะแนน | ครบ | `src/isap_pipeline/cli.py`, `extract_ocsc.py`, `extract_cgd.py`, `clean.py`, `dq.py`, `load.py` |
+| Direct answers 1-4 | ครบ | `docs/assignment_answers.md` |
+| Automated pipeline 60 คะแนน | ครบ | `src/isap_pipeline/cli.py`, `extract_ocsc.py`, `extract_cgd.py`, `clean.py`, `dq.py`, `load.py`, `downloader.py` |
 | Monthly new-data check | มีแล้ว มี caveat | `src/isap_pipeline/discovery.py`, `.github/workflows/monthly-check.yml`, `data/processed/source_check_latest.json` หลังรัน `check-new` |
 | Junior recommendations 20 คะแนน | ครบ | `docs/junior_recommendations.md` |
 | Demo readiness | ครบ | `docs/demo_script.md`, `sql/004_sample_queries.sql`, `data/warehouse/isap.duckdb` |
-| Code explainability | ดี | module แยกตามหน้าที่, มี CLI commands, มี tests 9 ตัว |
+| Code explainability | ดี | `docs/code_walkthrough.md`, module แยกตามหน้าที่, มี CLI commands, มี 13 tests |
+| Presentation readiness | ครบ | `docs/presentation_guide.md`, `docs/demo_script.md` |
 
 ## Current Validation Snapshot
 
@@ -27,7 +29,7 @@
 
 | Check | Result |
 |---|---|
-| `python -m pytest` | ผ่าน 9 tests |
+| `python -m pytest` | ผ่าน 13 tests |
 | `python -m isap_pipeline demo --warehouse data/warehouse/isap.duckdb` | รัน sample queries ได้ |
 | ตรวจ placeholder question marks ใน repo หลัก | ไม่พบจากไฟล์งานจริง |
 | DQ output | `all_core_checks` ผ่าน, issue count = 0 |
@@ -49,13 +51,10 @@
 ## Improvements If Time Allows
 
 1. เพิ่ม screenshot หรือ exported PNG ลง `docs/assets/` แล้ว embed ใน README/รายงานหลัก
-2. เพิ่ม `docs/code_walkthrough.md` อธิบายแต่ละ module แบบสั้น ๆ เพื่อใช้ซ้อมตอบว่า code แต่ละส่วนทำอะไร
-3. เพิ่ม data dictionary ราย column สำหรับ `fact_budget_execution` และ `fact_government_manpower` ให้ละเอียดกว่า summary ปัจจุบัน
-4. เพิ่ม GitHub Actions workflow สำหรับ `pytest` อีกอัน นอกเหนือจาก monthly source check
-5. เพิ่ม integration test สำหรับ workbook sample ที่มี merged cells และ multi-row headers
-6. เพิ่ม reconciliation DQ เช่น subtotal เท่ากับผลรวม detail ภายใน tolerance
-7. เพิ่ม master agency mapping design/table stub เพื่อเล่าการ join OCSC-CGD แบบ production
-8. เพิ่ม export PDF/HTML ของ notebook หรือ report สำหรับเปิดง่ายในวันสัมภาษณ์
+2. เพิ่ม integration test สำหรับ workbook sample ที่มี merged cells และ multi-row headers ซับซ้อนหลายแบบ
+3. เพิ่ม reconciliation DQ เช่น subtotal เท่ากับผลรวม detail ภายใน tolerance ที่นิยามต่อ sheet
+4. เพิ่ม master agency mapping design/table stub พร้อม human-review workflow
+5. เพิ่ม export PDF/HTML ของ notebook หรือ report สำหรับเปิดง่ายในวันสัมภาษณ์
 
 ## Interview Talking Points
 

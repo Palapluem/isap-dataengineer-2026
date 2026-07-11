@@ -12,6 +12,7 @@
 
 | เกณฑ์จากโจทย์ | สถานะ | หลักฐานใน repo |
 |---|---|---|
+| Visual submission overview | ครบ | `docs/submission_overview.md` |
 | Data Warehouse design 20 คะแนน | ครบ | `docs/warehouse_design.md`, `sql/001_create_raw.sql`, `sql/002_create_staging.sql`, `sql/003_create_marts.sql` |
 | EDA & Data Profiling 20 คะแนน | ครบ | `notebooks/01_eda_data_profiling.ipynb`, `docs/data_profiling_report.md`, `data/processed/profile_summary.json` |
 | Automated pipeline 60 คะแนน | ครบ | `src/isap_pipeline/cli.py`, `extract_ocsc.py`, `extract_cgd.py`, `clean.py`, `dq.py`, `load.py` |
@@ -35,7 +36,7 @@
 
 ## Visuals To Prepare
 
-ควรมีรูปประกอบ 5 รูปสำหรับ README/report หรือใช้เปิดระหว่าง demo:
+มีภาพ Mermaid ใน `docs/submission_overview.md` และ `docs/warehouse_design.md` แล้ว สำหรับ screenshot/PNG เพิ่มเติมเป็น optional ถ้าต้องการใช้เปิดระหว่าง demo:
 
 | Visual | Source | เหตุผล |
 |---|---|---|

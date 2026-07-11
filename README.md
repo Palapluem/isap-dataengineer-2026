@@ -115,6 +115,7 @@ python -m pytest
 
 ## Scoring Checklist
 
+- Submission overview with visuals: ดู `docs/submission_overview.md`
 - Data Warehouse design: ดู `docs/warehouse_design.md`
 - EDA & Data Profiling: ดู `docs/data_profiling_report.md`
 - Automated Data Pipeline: ดู `src/isap_pipeline/`, `sql/`, และ demo commands ด้านบน
@@ -122,6 +123,12 @@ python -m pytest
 - Junior recommendation: ดู `docs/junior_recommendations.md`
 - Demo script: ดู `docs/demo_script.md`
 - Submission readiness: ดู `docs/readiness_checklist.md`
+
+## Artifact Policy
+
+- Commit: source code, SQL, tests, docs, notebooks และ source Excel datasets ที่ใช้รัน demo
+- Do not commit: `data/warehouse/*.duckdb`, `data/processed/*.json`, `references/`, agent prompt, local editor/agent folders และ PDF โจทย์ต้นฉบับ
+- เหตุผลที่ ignore `.duckdb`: warehouse เป็น generated output ที่ควร rebuild ได้จาก source data และ pipeline เพื่อพิสูจน์ reproducibility
 
 ## Limitations
 

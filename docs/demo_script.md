@@ -1,0 +1,80 @@
+# Demo Script
+
+## 1. Setup
+
+```powershell
+python -m pip install -e ".[dev]"
+```
+
+Expected: package `isap-data-eng-pipeline` ติดตั้งแบบ editable
+
+## 2. Profile Workbooks
+
+```powershell
+python -m isap_pipeline profile --ocsc "datasets/ocsc/thai-gov-manpower-2567.4.xlsx" --cgd "datasets/cgd/2026.07.03.xlsx"
+```
+
+Expected:
+
+- สร้าง `data/processed/profile_summary.json`
+- สร้าง/อัปเดต `docs/data_profiling_report.md`
+- OCSC มี 68 sheets, CGD มี 15 sheets
+
+## 3. Run Pipeline
+
+```powershell
+python -m isap_pipeline run --ocsc "datasets/ocsc/thai-gov-manpower-2567.4.xlsx" --cgd "datasets/cgd/2026.07.03.xlsx" --warehouse "data/warehouse/isap.duckdb"
+```
+
+Expected output โดยประมาณ:
+
+```text
+raw_source_files: 2
+raw_workbook_sheets: 83
+raw_cells: 125890
+staging_cgd_budget_execution: 2913
+staging_ocsc_workforce: 5801
+mart_fact_budget_execution: 2913
+mart_fact_government_manpower: 5801
+```
+
+## 4. Run Demo Queries
+
+```powershell
+python -m isap_pipeline demo --warehouse "data/warehouse/isap.duckdb"
+```
+
+Expected:
+
+- Query 1: top entities by manpower
+- Query 2: low CGD disbursement performance by ministry
+- Query 3: low expenditure against monthly target
+- Query 4: exact-name join candidates between OCSC and CGD
+
+## 5. Check New Data
+
+```powershell
+python -m isap_pipeline check-new
+```
+
+Expected status:
+
+- `no_new_data` ถ้า metadata ตรง manifest
+- `new_data_found` ถ้า URL/filename/date เปลี่ยน
+- `source_unavailable` ถ้า network หรือ source page ใช้งานไม่ได้
+
+## 6. Tests
+
+```powershell
+python -m pytest
+```
+
+Expected: all tests passed
+
+## 7. Optional EDA Notebook
+
+```powershell
+python -m nbconvert --execute --to notebook --inplace "notebooks/01_eda_data_profiling.ipynb"
+```
+
+Expected: notebook executes top-to-bottom and shows workbook profiling tables/charts.

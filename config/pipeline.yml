@@ -1,0 +1,8 @@
+directories:
+  raw: "data/raw"
+  processed: "data/processed"
+  warehouse: "data/warehouse"
+outputs:
+  profile_json: "data/processed/profile_summary.json"
+  manifest_json: "data/processed/source_manifest.json"
+  source_check_json: "data/processed/source_check_latest.json"

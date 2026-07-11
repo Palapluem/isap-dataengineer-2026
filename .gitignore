@@ -1,0 +1,42 @@
+.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+src/*.egg-info/
+.pytest_cache/
+.pytest_tmp/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Local/editor/agent state must never be published.
+.vscode/
+.idea/
+.codex/
+.agent/
+.agents/
+
+# Secrets and local environment.
+.env
+.env.*
+*.pem
+*.key
+*.secret
+
+# Private/internal reference material.
+references/
+
+# AI agent working prompt for this assignment; keep local only.
+assignment/ISAP_DATA_ENG.pdf
+assignment/ISAP_DATA_ENG_AGENT_PROMPT.md
+
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/warehouse/*
+!data/warehouse/.gitkeep
+
+*.duckdb
+*.duckdb.wal
+*.log

@@ -13,7 +13,7 @@
 
 ```text
 .
-├── assignment/              # README อธิบายไฟล์โจทย์ที่เก็บเฉพาะ local
+├── assignment/              # PDF โจทย์ต้นฉบับและนโยบายไฟล์ภายใน
 ├── datasets/                # source Excel files ที่ใช้รัน demo
 │   ├── ocsc/
 │   └── cgd/
@@ -24,7 +24,7 @@
 └── data/                    # generated outputs เช่น profile JSON และ DuckDB
 ```
 
-หมายเหตุ: ไฟล์ `references/`, agent prompt, และ PDF โจทย์ต้นฉบับถูกเก็บเฉพาะ local และถูก exclude จาก GitHub เพื่อไม่เผยแพร่เอกสารภายในหรือ working artifact ที่ไม่ใช่ deliverable
+หมายเหตุ: PDF โจทย์ต้นฉบับเผยแพร่ใน repository ได้ ส่วน `references/` และ agent prompt เป็นข้อมูลภายในที่ถูกเก็บเฉพาะ local และ exclude จาก GitHub
 
 ## Setup
 
@@ -123,6 +123,7 @@ python -m pytest
 
 ## Scoring Checklist
 
+- Original assignment: ดู `assignment/ISAP_DATA_ENG.pdf`
 - Direct answers for Tasks 1-4: ดู `docs/assignment_answers.md`
 - Submission overview with visuals: ดู `docs/submission_overview.md`
 - Data Warehouse design: ดู `docs/warehouse_design.md`
@@ -139,7 +140,7 @@ python -m pytest
 ## Artifact Policy
 
 - Commit: source code, SQL, tests, docs, notebooks และ source Excel datasets ที่ใช้รัน demo
-- Do not commit: `data/warehouse/*.duckdb`, `data/processed/*.json`, `references/`, agent prompt, local editor/agent folders และ PDF โจทย์ต้นฉบับ
+- Do not commit: `data/warehouse/*.duckdb`, `data/processed/*.json`, `references/`, agent prompt และ local editor/agent folders
 - เหตุผลที่ ignore `.duckdb`: warehouse เป็น generated output ที่ควร rebuild ได้จาก source data และ pipeline เพื่อพิสูจน์ reproducibility
 
 ## Limitations

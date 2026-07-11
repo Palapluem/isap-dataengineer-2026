@@ -41,7 +41,7 @@ def run_data_quality_checks(
                 dataset_name="all",
                 table_name="all",
                 issue_count=0,
-                sample="Core range, non-negative, and duplicate checks passed.",
+                sample="All configured core data-quality checks passed.",
                 status="passed",
             )
         )
@@ -102,6 +102,49 @@ def _check_cgd(df: pd.DataFrame) -> list[DQIssue]:
                 sample=duplicated[keys].head(3).to_dict("records").__repr__(),
             )
         )
+    issues.extend(_check_cgd_total_reconciliation(df))
+    return issues
+
+
+def _check_cgd_total_reconciliation(df: pd.DataFrame) -> list[DQIssue]:
+    issues: list[DQIssue] = []
+    measures = ["disbursement_million_baht"]
+    group_cols = ["source_file_hash", "sheet_name", "report_type", "expense_category"]
+    if not all(col in df.columns for col in [*group_cols, "entity_type"]):
+        return issues
+
+    for group_key, group in df.groupby(group_cols, dropna=False):
+        total_rows = group[group["entity_type"] == "total"]
+        detail_rows = group[group["entity_type"] != "total"]
+        if len(total_rows) != 1 or detail_rows.empty:
+            continue
+        for measure in measures:
+            if measure not in group.columns:
+                continue
+            published = total_rows[measure].dropna()
+            detail = detail_rows[measure].dropna()
+            if len(published) != 1 or detail.empty:
+                continue
+            published_value = float(published.iloc[0])
+            detail_value = float(detail.sum())
+            difference = detail_value - published_value
+            tolerance = max(0.01, abs(published_value) * 1e-6)
+            if abs(difference) <= tolerance:
+                continue
+            sheet_name = str(group_key[1])
+            issues.append(
+                DQIssue(
+                    check_name=f"cgd_total_reconciliation_{measure}",
+                    severity="warning",
+                    dataset_name="cgd_budget_execution",
+                    table_name="staging.cgd_budget_execution",
+                    issue_count=1,
+                    sample=(
+                        f"sheet={sheet_name!r}, published={published_value:.6f}, "
+                        f"detail_sum={detail_value:.6f}, difference={difference:.6f}"
+                    ),
+                )
+            )
     return issues
 
 def _check_ocsc(df: pd.DataFrame) -> list[DQIssue]:

@@ -35,11 +35,14 @@ def build_notebook() -> nbf.NotebookNode:
         ),
         md(
             """
-            ## tl;dr
+            ## สรุปสำคัญก่อนอ่าน
+
+            ส่วนนี้คือบทสรุปสั้น ๆ สำหรับผู้อ่านที่ต้องการเห็นผลสำคัญก่อนลงรายละเอียด
 
             - OCSC workbook มี 68 sheets และเป็น Excel แบบรายงาน มี cover/index, merged cells, formula cells, multi-row headers, subtotal/total rows และ wide tables หลายรูปแบบ
             - CGD workbook มี 15 sheets โครงสร้างสม่ำเสมอกว่า แต่ยังมีหัวตาราง 2 ชั้น และต้องแยกความหมายระหว่าง `เบิกจ่าย` กับ `ใช้จ่าย`
             - แนวทางที่เหมาะคือเก็บ raw cells ทุก sheet ก่อน แล้ว normalize เฉพาะ sheet/table ที่มี grain ชัดเจนเข้าสู่ staging/mart
+            - EDA พบและแก้ปัญหาเพิ่ม 2 จุด: OCSC มีแถว `ร้อยละ` ที่ไม่ควรถูกนับเป็น headcount และ CGD มีแถว `รวม` อยู่คนละคอลัมน์กับชื่อ entity ปกติ
             - การเชื่อม OCSC กับ CGD ทำได้ระดับ demo ด้วย normalized Thai entity name แต่ production ควรมี master agency mapping
             """
         ),
@@ -59,6 +62,7 @@ def build_notebook() -> nbf.NotebookNode:
             import matplotlib.pyplot as plt
             import pandas as pd
             from IPython.display import display
+            from matplotlib import font_manager
             from openpyxl import load_workbook
 
             PROJECT_ROOT = Path.cwd()
@@ -76,6 +80,21 @@ def build_notebook() -> nbf.NotebookNode:
             warnings.filterwarnings("ignore", category=UserWarning, module=r"openpyxl\..*")
             pd.set_option("display.max_columns", 40)
             pd.set_option("display.max_colwidth", 90)
+
+            available_fonts = {font.name for font in font_manager.fontManager.ttflist}
+            thai_font_candidates = [
+                "Noto Sans Thai Looped",
+                "Leelawadee UI",
+                "Tahoma",
+                "Arial Unicode MS",
+            ]
+            THAI_FONT = next(
+                (font for font in thai_font_candidates if font in available_fonts),
+                None,
+            )
+            if THAI_FONT:
+                plt.rcParams["font.family"] = THAI_FONT
+            plt.rcParams["axes.unicode_minus"] = False
 
             OCSC_PATH = PROJECT_ROOT / "datasets" / "ocsc" / "thai-gov-manpower-2567.4.xlsx"
             CGD_PATH = PROJECT_ROOT / "datasets" / "cgd" / "2026.07.03.xlsx"
@@ -459,9 +478,206 @@ def build_notebook() -> nbf.NotebookNode:
         ),
         md(
             """
-            ## 8. Data Quality Checks
+            ## 8. Content-Level Insights
 
-            DQ checks ใช้กฎที่ตรงกับ business grain เช่น CGD ต้องรวม `entity_code` ใน duplicate key เพราะบางหน่วยงานชื่อซ้ำได้
+            ส่วนนี้เพิ่มการวิเคราะห์เนื้อหาหลัง normalize โดยรักษา grain ให้ชัดเจน ไม่รวม total กับ detail และไม่เปรียบเทียบ OCSC ปี 2567 กับ CGD ปี 2569 เสมือนเป็นช่วงเวลาเดียวกัน
+            """
+        ),
+        code(
+            r"""
+            ocsc_agency_headcount = ocsc_workforce[
+                (ocsc_workforce["metric_name"] == "civil_servant")
+                & (ocsc_workforce["entity_type"] == "agency")
+                & ocsc_workforce["headcount"].notna()
+            ].copy()
+            ocsc_agency_headcount["entity_label"] = ocsc_agency_headcount.apply(
+                lambda row: (
+                    f"{row['ministry_name']} | {row['agency_name']}"
+                    if pd.notna(row["ministry_name"])
+                    else str(row["agency_name"])
+                ),
+                axis=1,
+            )
+            ocsc_top_agencies = ocsc_agency_headcount.nlargest(10, "headcount").sort_values(
+                "headcount"
+            )
+            ocsc_top_agencies["chart_label"] = (
+                ocsc_top_agencies["entity_label"]
+                if THAI_FONT
+                else [f"Agency {index + 1}" for index in range(len(ocsc_top_agencies))]
+            )
+
+            fig, ax = plt.subplots(figsize=(10, 5.5))
+            ax.barh(
+                ocsc_top_agencies["chart_label"],
+                ocsc_top_agencies["headcount"],
+                color="#2F6B9A",
+                edgecolor="#1F2933",
+                linewidth=0.6,
+            )
+            ax.set_title("OCSC: top 10 agency rows by civil-servant headcount")
+            ax.set_xlabel("people, fiscal year 2567 (BE)")
+            ax.set_ylabel("")
+            ax.grid(axis="x", color="#D9DEE3", linewidth=0.6)
+            ax.set_axisbelow(True)
+            for container in ax.containers:
+                ax.bar_label(container, fmt="{:,.0f}", padding=3, fontsize=8)
+            plt.tight_layout()
+            plt.show()
+
+            display(
+                ocsc_top_agencies[["chart_label", "ministry_name", "agency_name", "headcount"]]
+                .sort_values("headcount", ascending=False)
+                .reset_index(drop=True)
+            )
+            """
+        ),
+        md(
+            """
+            กราฟ OCSC ใช้เฉพาะ `entity_type='agency'` และ `metric_name='civil_servant'` พร้อมแสดงกระทรวงใน label เพื่อแยกชื่อทั่วไปที่ซ้ำกัน เช่น สำนักงานปลัดกระทรวง กราฟนี้เป็น ranking ตาม source row ไม่ใช่การรวมทุก employment type
+            """
+        ),
+        code(
+            r"""
+            cgd_disbursement = cgd_extract.budget_execution[
+                (cgd_extract.budget_execution["report_type"] == "disbursement")
+                & (cgd_extract.budget_execution["expense_category"] == "total")
+                & (~cgd_extract.budget_execution["entity_type"].isin(["total", "summary"]))
+                & cgd_extract.budget_execution["disbursement_pct"].between(0, 100)
+            ].copy()
+
+            distribution_summary = (
+                cgd_disbursement.groupby("entity_type")["disbursement_pct"]
+                .agg(observations="count", median_pct="median", mean_pct="mean", min_pct="min", max_pct="max")
+                .round(2)
+                .sort_values("observations", ascending=False)
+            )
+            display(distribution_summary)
+
+            entity_order = distribution_summary.index.tolist()
+            boxplot_values = [
+                cgd_disbursement.loc[
+                    cgd_disbursement["entity_type"] == entity_type, "disbursement_pct"
+                ].to_numpy()
+                for entity_type in entity_order
+            ]
+            entity_labels = [
+                f"{entity_type} (n={len(values)})"
+                for entity_type, values in zip(entity_order, boxplot_values, strict=True)
+            ]
+
+            fig, ax = plt.subplots(figsize=(10, 5))
+            boxplot = ax.boxplot(
+                boxplot_values,
+                tick_labels=entity_labels,
+                vert=False,
+                patch_artist=True,
+                medianprops={"color": "#1F2933", "linewidth": 1.4},
+                boxprops={"edgecolor": "#2F6B9A", "linewidth": 1.0},
+                whiskerprops={"color": "#657786"},
+                capprops={"color": "#657786"},
+                flierprops={"marker": "o", "markersize": 3, "markerfacecolor": "#D99032"},
+            )
+            for box in boxplot["boxes"]:
+                box.set_facecolor("#DCEAF4")
+            ax.set_title("CGD: distribution of total disbursement rate by entity type")
+            ax.set_xlabel("disbursement rate (%), as of 3 July 2026")
+            ax.set_xlim(0, 105)
+            ax.grid(axis="x", color="#D9DEE3", linewidth=0.6)
+            ax.set_axisbelow(True)
+            plt.tight_layout()
+            plt.show()
+            """
+        ),
+        md(
+            """
+            Box plot แสดง median, spread และ outlier ของอัตราเบิกจ่ายโดยใช้แถวระดับ detail ที่อยู่ใน grain เดียวกัน (`report_type='disbursement'`, `expense_category='total'`) จำนวน observation ในแต่ละกลุ่มไม่เท่ากัน จึงแสดง `n` กำกับ และไม่ควรใช้กราฟนี้สรุปสาเหตุของความแตกต่าง
+            """
+        ),
+        code(
+            r"""
+            def build_reconciliation(frame: pd.DataFrame, measure: str) -> pd.DataFrame:
+                rows = []
+                group_cols = ["sheet_name", "report_type", "expense_category"]
+                for group_key, group in frame[frame[measure].notna()].groupby(group_cols):
+                    published_rows = group[group["entity_type"] == "total"]
+                    detail_rows = group[group["entity_type"] != "total"]
+                    if len(published_rows) != 1 or detail_rows.empty:
+                        continue
+                    published_total = float(published_rows[measure].iloc[0])
+                    detail_sum = float(detail_rows[measure].sum())
+                    difference = detail_sum - published_total
+                    tolerance = max(0.01, abs(published_total) * 1e-6)
+                    rows.append(
+                        {
+                            "sheet_name": group_key[0],
+                            "report_type": group_key[1],
+                            "expense_category": group_key[2],
+                            "detail_rows": len(detail_rows),
+                            "published_total": published_total,
+                            "detail_sum": detail_sum,
+                            "difference": difference,
+                            "within_tolerance": abs(difference) <= tolerance,
+                        }
+                    )
+                return pd.DataFrame(rows)
+
+            cgd_reconciliation = build_reconciliation(
+                cgd_extract.budget_execution, "disbursement_million_baht"
+            )
+            print(
+                "CGD reconciliation groups within tolerance:",
+                f"{int(cgd_reconciliation['within_tolerance'].sum())}/{len(cgd_reconciliation)}",
+            )
+            display(
+                cgd_reconciliation.assign(
+                    published_total=lambda frame: frame["published_total"].round(4),
+                    detail_sum=lambda frame: frame["detail_sum"].round(4),
+                    difference=lambda frame: frame["difference"].round(6),
+                ).sort_values(["sheet_name", "expense_category"])
+            )
+
+            def normalized_names(series: pd.Series) -> set[str]:
+                return set(
+                    series.dropna()
+                    .astype(str)
+                    .str.lower()
+                    .str.replace(r"\s+", "", regex=True)
+                    .loc[lambda values: values.ne("")]
+                )
+
+            ocsc_names = normalized_names(ocsc_workforce["agency_name"])
+            cgd_names = normalized_names(cgd_extract.budget_execution["entity_name"])
+            exact_matches = ocsc_names & cgd_names
+            cross_source_coverage = pd.DataFrame(
+                [
+                    {
+                        "source": "OCSC",
+                        "distinct_normalized_names": len(ocsc_names),
+                        "exact_matches": len(exact_matches),
+                        "coverage_pct": round(100 * len(exact_matches) / len(ocsc_names), 1),
+                    },
+                    {
+                        "source": "CGD",
+                        "distinct_normalized_names": len(cgd_names),
+                        "exact_matches": len(exact_matches),
+                        "coverage_pct": round(100 * len(exact_matches) / len(cgd_names), 1),
+                    },
+                ]
+            )
+            display(cross_source_coverage)
+            """
+        ),
+        md(
+            """
+            Reconciliation ใช้ยอด `รวม` ที่เผยแพร่ในแต่ละ CGD sheet เทียบกับผลรวม detail ภายใน tolerance สำหรับ floating-point rounding ส่วน exact-name coverage เป็นเพียง diagnostic ของ join candidate ไม่ใช่ accuracy เพราะสองแหล่งมีขอบเขต entity ต่างกันและยังไม่มี agency master ที่ผ่าน human review
+            """
+        ),
+        md(
+            """
+            ## 9. Data Quality Checks
+
+            DQ checks ใช้กฎที่ตรงกับ business grain เช่น CGD ต้องรวม `entity_code` ใน duplicate key เพราะบางหน่วยงานชื่อซ้ำได้ และตรวจยอดรวมกับ detail เมื่อ source มี total row ที่เปรียบเทียบได้
             """
         ),
         code(
@@ -472,11 +688,13 @@ def build_notebook() -> nbf.NotebookNode:
         ),
         md(
             """
-            ## 9. Takeaways
+            ## 10. Takeaways
 
             - ทั้ง 2 datasets ถูกแยก source, extractor, staging และ mart ชัดเจน
             - OCSC ต้องระวัง report workbook structure จึงใช้แนว raw-first และ normalize เฉพาะ grain ที่ชัดเจนก่อน
             - CGD เหมาะกับการ flatten/unpivot เพราะ header structure ค่อนข้างซ้ำกันหลาย sheet
+            - Content-level EDA ต้องกำหนด metric, entity level และ total/detail filter ก่อนทำกราฟทุกครั้ง
+            - CGD total rows ที่กู้คืนจากคอลัมน์ A ทำให้ตรวจ reconciliation กับ detail ได้จริง
             - การ join ระหว่าง OCSC และ CGD ยังควรถือเป็น demo จนกว่าจะมี master agency mapping
             - Notebook นี้ควรใช้เป็น EDA evidence ส่วนการ demo pipeline ให้ใช้ CLI ใน README
             """

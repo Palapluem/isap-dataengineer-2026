@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
-from isap_pipeline.clean import canonical_entity_name, parse_thai_date, to_number
+from isap_pipeline.clean import canonical_entity_name, is_total_label, parse_thai_date, to_number
 from isap_pipeline.metadata import SourceFileMetadata
 
 @dataclass(frozen=True)
@@ -110,9 +110,12 @@ def _parse_detail_sheet(
 
     for row_idx in range(6, ws.max_row + 1):
         entity_name = canonical_entity_name(ws.cell(row_idx, entity_col).value)
+        first_column_label = canonical_entity_name(ws.cell(row_idx, 1).value)
+        if not entity_name and is_total_label(first_column_label):
+            entity_name = first_column_label
         if not entity_name or entity_name.startswith("หมายเหตุ") or entity_name.startswith("ที่มา"):
             continue
-        if entity_name in {"รวม", "รวมทั้งสิ้น"}:
+        if is_total_label(entity_name):
             entity_type_current = "total"
         else:
             entity_type_current = entity_type
@@ -155,12 +158,19 @@ def _base_row(
         "fiscal_year": meta.fiscal_year,
         "fiscal_year_be": meta.fiscal_year_be,
         "as_of_date": as_of_date.isoformat() if as_of_date else meta.as_of_date,
-        "report_type": "expenditure" if "ใช้จ่าย" in sheet_name else "disbursement",
+        "report_type": _report_type_from_sheet(sheet_name),
         "entity_type": entity_type,
         "entity_name": entity_name,
         "entity_code": entity_code,
         "expense_category": expense_category,
     }
+
+
+def _report_type_from_sheet(sheet_name: str) -> str:
+    normalized = sheet_name.strip()
+    if "ใช้จ่าย" in normalized or normalized.endswith("(ใช้"):
+        return "expenditure"
+    return "disbursement"
 
 def _entity_type_from_sheet(sheet_name: str) -> str:
     if "กระทรวง" in sheet_name:

@@ -34,3 +34,29 @@ def test_ocsc_transform_extracts_workforce_metrics(tmp_path: Path) -> None:
     agency = result[(result["agency_name"] == "กรมตัวอย่าง") & (result["metric_name"] == "civil_servant")]
     assert agency.iloc[0]["headcount"] == 20
     assert agency.iloc[0]["ministry_name"] == "สำนักนายกรัฐมนตรี"
+
+
+def test_ocsc_profile_skips_percentage_summary_row(tmp_path: Path) -> None:
+    path = tmp_path / "thai-gov-manpower-2567.4.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "88-97"
+    ws.append(["รายงาน", "ช่วงอายุ", None, "เพศ", None, "ระดับการศึกษา"])
+    ws.append([None] * 20)
+    ws.append([None] * 20)
+    ws.append(["รวมทั้งหมด", 100, 1, 20, 30, 25, 15, 5, 3, 1, 0, 1, 40, 45, 55, 55, 20, 70, 25, 5])
+    ws.append(["ร้อยละ", 100, 1, 20, 30, 25, 15, 5, 3, 1, 0, 1, 40, 45, 55, 55, 20, 70, 25, 5])
+    wb.save(path)
+
+    meta = SourceFileMetadata(
+        dataset_name="ocsc_government_manpower",
+        source_name="OCSC",
+        path=path,
+        sha256=sha256_file(path),
+        fiscal_year=2024,
+        fiscal_year_be=2567,
+    )
+    result = extract_ocsc_workbook(path, meta, "run-1").workforce_profile
+
+    assert not (result["agency_name"] == "ร้อยละ").any()
+    assert (result["agency_name"] == "รวมทั้งหมด").any()

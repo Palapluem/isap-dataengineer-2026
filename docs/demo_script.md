@@ -32,10 +32,10 @@ Expected output โดยประมาณ:
 raw_source_files: 2
 raw_workbook_sheets: 83
 raw_cells: 125890
-staging_cgd_budget_execution: 2913
-staging_ocsc_workforce: 5801
-mart_fact_budget_execution: 2913
-mart_fact_government_manpower: 5801
+staging_cgd_budget_execution: 2937
+staging_ocsc_workforce: 5784
+mart_fact_budget_execution: 2937
+mart_fact_government_manpower: 5784
 ```
 
 ## 4. Run Demo Queries
@@ -69,7 +69,7 @@ Expected status:
 python -m pytest
 ```
 
-Expected: 13 tests passed
+Expected: 16 tests passed
 
 ## 7. Optional Sync Latest
 

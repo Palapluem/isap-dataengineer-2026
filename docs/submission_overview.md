@@ -67,7 +67,7 @@ flowchart LR
 | `data/processed/*.json` | No | เป็น generated profiling/DQ/source-check output; command สามารถสร้างใหม่ได้ |
 | `references/` | No | เป็น internal/private reference material |
 | agent prompt / working brief | No | เป็น local working artifact ไม่ใช่ deliverable |
-| original assignment PDF | No | ไม่จำเป็นต่อ public solution repo และหลีกเลี่ยงการเผยแพร่ไฟล์โจทย์ต้นฉบับ |
+| original assignment PDF | Yes | เจ้าของงานยืนยันว่าเผยแพร่ได้และช่วยให้ผู้ตรวจเทียบคำตอบกับโจทย์ต้นฉบับ |
 
 ## Why Ignore `.duckdb`
 

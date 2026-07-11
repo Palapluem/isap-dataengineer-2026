@@ -39,6 +39,8 @@ flowchart LR
 | CGD มีงบประจำ/งบลงทุน/รวม ในแนวกว้าง | unpivot เป็น `expense_category` เพื่อให้ query ง่าย |
 | CGD มีทั้งมุมเบิกจ่ายและใช้จ่าย | แยกด้วย `report_type` เพื่อไม่ผสม metric คนละนิยาม |
 | OCSC มีหลายมิติกำลังพลใน workbook เดียว | ทำ fact แบบ metric-driven ด้วย `metric_name` และ `metric_group` |
+| OCSC มีแถว summary ชื่อ `ร้อยละ` ปะปนกับแถวจำนวนคน | ข้ามแถว percentage summary เพื่อไม่เก็บร้อยละเป็น headcount |
+| CGD วางคำว่า `รวม` ไว้ในคอลัมน์ลำดับแทนคอลัมน์ entity | ตรวจ total label จากคอลัมน์แรกและเก็บ `entity_type='total'` สำหรับ reconciliation |
 | join OCSC-CGD ไม่มี agency code กลางครบทุก sheet | demo join ใช้ normalized Thai name แต่รายงานระบุ caveat ว่า production ควรมี master agency mapping |
 
 ## OCSC government workforce statistics
@@ -114,7 +116,7 @@ flowchart LR
 | 156-157 | 46 | 7 | 1 | 0 | 34 | 1 | report |
 | ปกหลัง | 1 | 1 | 0 | 0 | 1 | None | cover_or_blank |
 
-ปัญหาสำคัญที่พบ: workbook เป็นรายงานสำหรับอ่าน ไม่ใช่ flat data; มี cover/index, merged cells, multi-row headers, formula cells, wide tables และ subtotal/total ปะปนกับ detail rows จึงต้องเก็บ raw cell ก่อน แล้วค่อย normalize เฉพาะ sheet ที่มี grain ชัดเจน
+ปัญหาสำคัญที่พบ: workbook เป็นรายงานสำหรับอ่าน ไม่ใช่ flat data; มี cover/index, merged cells, multi-row headers, formula cells, wide tables และแถวร้อยละ/ยอดรวมปะปนกับ detail rows จึงต้องเก็บ raw cell ก่อน แยกหน่วยของ summary row และค่อย normalize เฉพาะ sheet ที่มี grain ชัดเจน
 
 ## CGD budget execution statistics
 
@@ -136,7 +138,7 @@ flowchart LR
 | 14.ส่วนกลางจัดสรรให้จังหวัด(ใช้ | 91 | 18 | 94 | 0 | 1 | 5 | geography |
 | 15.กองทุนฯ | 46 | 12 | 14 | 0 | 1 | 4 | budget_execution |
 
-ปัญหาสำคัญที่พบ: ตารางมีหัว 2 ชั้น, มีทั้งมุมมองเบิกจ่ายและใช้จ่าย, ค่าเงินเป็นล้านบาท, percent อยู่ในรูป 0-100, มีรหัสหน่วยงานเฉพาะบาง sheet และมีช่องว่างจาก merged cells ต้อง flatten header และ unpivot current/investment/total เป็น long rows
+ปัญหาสำคัญที่พบ: ตารางมีหัว 2 ชั้น, มีทั้งมุมมองเบิกจ่ายและใช้จ่าย, ค่าเงินเป็นล้านบาท, percent อยู่ในรูป 0-100, มีรหัสหน่วยงานเฉพาะบาง sheet, ชื่อ sheet ใช้จ่ายบางชื่อถูก Excel ตัด และคำว่า `รวม` อยู่ในคอลัมน์ลำดับ ต้อง flatten header, classify report type และ unpivot current/investment/total เป็น long rows
 
 ## Cross-dataset Considerations
 
@@ -145,7 +147,7 @@ flowchart LR
 | agency/ministry name ไม่ตรงกัน 100% | join แล้วหลุดหรือจับคู่ผิด | normalize whitespace และ demo exact-name join | ทำ master agency mapping พร้อม alias/effective date |
 | เวลาของข้อมูลต่างกัน | OCSC เป็น snapshot รายปี ส่วน CGD เป็น as-of date | เก็บ `fiscal_year`, `fiscal_year_be`, `as_of_date` แยกกัน | ทำ dim_date และระบุ reporting cutoff ชัด |
 | หน่วยวัดต่างกัน | headcount เทียบกับ million baht โดยตรงไม่ได้ | เก็บ measure แยก fact table | สร้าง semantic layer สำหรับ ratio ที่นิยามแล้วเท่านั้น |
-| total/subtotal ปะปน detail | double count ใน mart/query | tag `entity_type` และให้ query filter ได้ | เพิ่ม reconciliation DQ ระหว่าง subtotal/detail |
+| total/subtotal ปะปน detail | double count ใน mart/query | tag `entity_type` และ reconcile ยอดเบิกจ่ายเมื่อมี published total | ขยาย reconciliation ไป measure อื่นหลังยืนยัน semantic grain |
 
 ## Cleaning Strategy
 

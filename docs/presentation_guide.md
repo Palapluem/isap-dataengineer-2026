@@ -109,7 +109,7 @@
 ภาพ:
 
 - bar chart หรือ table จาก notebook แสดง merged/formula counts ตาม sheet
-- ใส่กล่อง `ผลลัพธ์: 5,801 normalized rows`
+- ใส่กล่อง `ผลลัพธ์: 5,784 normalized rows`
 
 พูด:
 
@@ -133,7 +133,7 @@
 ภาพ:
 
 - diagram ก่อน/หลัง: wide Excel columns → long rows
-- ใส่กล่อง `ผลลัพธ์: 2,913 normalized rows`
+- ใส่กล่อง `ผลลัพธ์: 2,937 normalized rows`
 
 พูด:
 
@@ -183,8 +183,8 @@
 
 ตัวเลขเสริม:
 
-- exact normalized match 158 ชื่อ
-- เทียบกับ OCSC distinct 258 และ CGD distinct 568
+- exact normalized match 159 ชื่อ
+- เทียบกับ OCSC distinct 257 และ CGD distinct 569
 
 พูด caveat ทันที:
 
@@ -227,7 +227,7 @@ check-new → sync-latest
 
 ตัวเลข:
 
-- 13 tests passed
+- 16 tests passed
 - core DQ issue count = 0
 - lint passed
 - 2 GitHub Actions workflows: CI และ monthly source check
@@ -239,7 +239,7 @@ check-new → sync-latest
 
 พูด caveat:
 
-> DQ ผ่านไม่ได้แปลว่าพิสูจน์ business truth ทุกตัว ปัจจุบันยังขาด reconciliation total เทียบ detail ที่ต้องกำหนด scope และ tolerance ร่วมกับเจ้าของข้อมูลครับ
+> DQ ผ่านไม่ได้แปลว่าพิสูจน์ business truth ทุกตัว ปัจจุบัน reconciliation ยอดเบิกจ่ายผ่าน 15 จาก 15 กลุ่มที่เปรียบเทียบได้ แต่ measure อื่นยังต้องกำหนด scope และ tolerance ร่วมกับเจ้าของข้อมูลครับ
 
 ### Slide 10: Monthly Check และ New Release
 
@@ -288,7 +288,7 @@ check-new → sync-latest
 
 1. Data contract + schema versioning
 2. Human-reviewed agency master
-3. Total/detail reconciliation
+3. Extend reconciliation to additional validated measures
 4. Immutable raw storage + observability
 
 ปิดด้วย:
@@ -313,7 +313,7 @@ python -m pytest
 python -m isap_pipeline run --ocsc "datasets/ocsc/thai-gov-manpower-2567.4.xlsx" --cgd "datasets/cgd/2026.07.03.xlsx" --warehouse "data/warehouse/isap.duckdb"
 ```
 
-ชี้ row counts 2,913 และ 5,801 ไม่ต้องอ่านทุกบรรทัด
+ชี้ row counts 2,937 และ 5,784 ไม่ต้องอ่านทุกบรรทัด
 
 ### 3. Idempotency
 
@@ -347,7 +347,7 @@ python -m isap_pipeline check-new
 
 ### ถ้ามีเวลาเพิ่มจะทำอะไรเป็นอันดับแรก
 
-ตอบ: เพิ่ม agency master แบบ human-reviewed และ reconciliation total/detail เพราะสองเรื่องนี้ลดความเสี่ยงของตัวเลขผิดเชิงธุรกิจมากกว่าการเพิ่ม dashboard
+ตอบ: เพิ่ม agency master แบบ human-reviewed และขยาย reconciliation ไป measure ที่ยืนยัน semantic grain แล้ว เพราะสองเรื่องนี้ลดความเสี่ยงของตัวเลขผิดเชิงธุรกิจมากกว่าการเพิ่ม dashboard
 
 ### ทำไมไม่ใช้ Airflow หรือ dbt
 
@@ -365,7 +365,7 @@ python -m isap_pipeline check-new
 
 ตอบให้เป็นธรรมชาติ:
 
-> ผมใช้ AI ช่วยเร่งการวางโครงและ review แต่ผมตรวจ workbook จริง รัน pipeline และ tests และสามารถอธิบาย decision กับ failure mode ได้ทุก module จุดที่ผมไม่มั่นใจ เช่น agency matching และ reconciliation ผมระบุเป็น limitation แทนการอ้างว่าเสร็จแล้วครับ
+> ผมใช้ AI ช่วยเร่งการวางโครงและ review แต่ผมตรวจ workbook จริง รัน pipeline และ tests และสามารถอธิบาย decision กับ failure mode ได้ทุก module จุดที่ยังไม่ครอบคลุม เช่น agency matching และ reconciliation บาง measure ผมระบุเป็น limitation แทนการอ้างว่าเสร็จแล้วครับ
 
 ## Checklist ก่อนวันนำเสนอ
 

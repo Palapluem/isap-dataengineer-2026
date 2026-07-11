@@ -20,7 +20,7 @@
 | Monthly new-data check | มีแล้ว มี caveat | `src/isap_pipeline/discovery.py`, `.github/workflows/monthly-check.yml`, `data/processed/source_check_latest.json` หลังรัน `check-new` |
 | Junior recommendations 20 คะแนน | ครบ | `docs/junior_recommendations.md` |
 | Demo readiness | ครบ | `docs/demo_script.md`, `sql/004_sample_queries.sql`, `data/warehouse/isap.duckdb` |
-| Code explainability | ดี | `docs/code_walkthrough.md`, module แยกตามหน้าที่, มี CLI commands, มี 13 tests |
+| Code explainability | ดี | `docs/code_walkthrough.md`, module แยกตามหน้าที่, มี CLI commands, มี 16 tests |
 | Presentation readiness | ครบ | `docs/presentation_guide.md`, `docs/demo_script.md` |
 
 ## Current Validation Snapshot
@@ -29,7 +29,7 @@
 
 | Check | Result |
 |---|---|
-| `python -m pytest` | ผ่าน 13 tests |
+| `python -m pytest` | ผ่าน 16 tests |
 | `python -m isap_pipeline demo --warehouse data/warehouse/isap.duckdb` | รัน sample queries ได้ |
 | ตรวจ placeholder question marks ใน repo หลัก | ไม่พบจากไฟล์งานจริง |
 | DQ output | `all_core_checks` ผ่าน, issue count = 0 |
@@ -52,7 +52,7 @@
 
 1. เพิ่ม screenshot หรือ exported PNG ลง `docs/assets/` แล้ว embed ใน README/รายงานหลัก
 2. เพิ่ม integration test สำหรับ workbook sample ที่มี merged cells และ multi-row headers ซับซ้อนหลายแบบ
-3. เพิ่ม reconciliation DQ เช่น subtotal เท่ากับผลรวม detail ภายใน tolerance ที่นิยามต่อ sheet
+3. ขยาย reconciliation DQ จาก `disbursement_million_baht` ไป measure อื่นหลังยืนยัน semantic grain ต่อ sheet
 4. เพิ่ม master agency mapping design/table stub พร้อม human-review workflow
 5. เพิ่ม export PDF/HTML ของ notebook หรือ report สำหรับเปิดง่ายในวันสัมภาษณ์
 

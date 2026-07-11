@@ -2,7 +2,7 @@ from pathlib import Path
 
 from openpyxl import Workbook
 
-from isap_pipeline.extract_cgd import extract_cgd_workbook
+from isap_pipeline.extract_cgd import _report_type_from_sheet, extract_cgd_workbook
 from isap_pipeline.metadata import SourceFileMetadata, sha256_file
 
 
@@ -53,6 +53,7 @@ def test_cgd_transform_unpivots_expense_groups(tmp_path: Path) -> None:
         ]
     )
     ws.append([1, "กรมบัญชีกลาง", 100, 10, 70, 70, 50, 5, 20, 40, 150, 15, 90, 60, "03003"])
+    ws.append(["รวม", None, 100, 10, 70, 70, 50, 5, 20, 40, 150, 15, 90, 60, None])
     wb.save(path)
 
     meta = SourceFileMetadata(
@@ -65,8 +66,21 @@ def test_cgd_transform_unpivots_expense_groups(tmp_path: Path) -> None:
     )
     result = extract_cgd_workbook(path, meta, "run-1").budget_execution
 
-    assert len(result) == 3
-    total = result[result["expense_category"] == "total"].iloc[0]
-    assert total["entity_name"] == "กรมบัญชีกลาง"
-    assert total["disbursement_million_baht"] == 90
-    assert total["disbursement_pct"] == 60
+    assert len(result) == 6
+    agency_total = result[
+        (result["entity_name"] == "กรมบัญชีกลาง")
+        & (result["expense_category"] == "total")
+    ].iloc[0]
+    assert agency_total["disbursement_million_baht"] == 90
+    assert agency_total["disbursement_pct"] == 60
+
+    published_total = result[
+        (result["entity_type"] == "total") & (result["expense_category"] == "total")
+    ].iloc[0]
+    assert published_total["entity_name"] == "รวม"
+    assert published_total["disbursement_million_baht"] == 90
+
+
+def test_cgd_truncated_expenditure_sheet_name_is_classified() -> None:
+    assert _report_type_from_sheet("14.ส่วนกลางจัดสรรให้จังหวัด(ใช้") == "expenditure"
+    assert _report_type_from_sheet("3.หน่วยงาน") == "disbursement"

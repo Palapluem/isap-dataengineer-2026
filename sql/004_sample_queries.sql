@@ -5,6 +5,7 @@ SELECT
     sum(headcount) AS headcount
 FROM mart.fact_government_manpower
 WHERE metric_name = 'civil_servant'
+  AND entity_type <> 'total'
 GROUP BY 1, 2
 ORDER BY headcount DESC
 LIMIT 10;
@@ -47,6 +48,8 @@ JOIN mart.fact_budget_execution b
   ON lower(regexp_replace(m.agency_name, '\\s+', '', 'g')) =
      lower(regexp_replace(b.entity_name, '\\s+', '', 'g'))
 WHERE m.metric_name = 'civil_servant'
+  AND m.entity_type <> 'total'
+  AND b.entity_type <> 'total'
   AND b.expense_category = 'total'
   AND b.report_type = 'disbursement'
 GROUP BY 1

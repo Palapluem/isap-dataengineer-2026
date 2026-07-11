@@ -59,14 +59,15 @@ python -m isap_pipeline <command>
 - แยก summary กับ detail parser
 - หา entity/code columns และ group spans จาก header
 - unpivot รายจ่ายประจำ รายจ่ายลงทุน และรวม
-- แยก `report_type` จากชื่อ sheet ที่มีคำว่าใช้จ่าย
+- แยก `report_type` จากชื่อ sheet และรองรับชื่อ sheet ใช้จ่ายที่ถูก Excel ตัดเหลือท้าย `(ใช้`
+- เก็บแถว `รวม` ที่อยู่ในคอลัมน์ลำดับเพื่อใช้ reconciliation
 
 ### `dq.py`
 
-- ตรวจ rows present, non-negative numeric fields, percentage range และ duplicate grain
+- ตรวจ rows present, non-negative numeric fields, percentage range, duplicate grain และยอดเบิกจ่ายรวมเทียบ detail ในกลุ่มที่มี published total
 - คืนผลเป็น DataFrame เพื่อเขียน JSON และโหลดเข้า warehouse ได้
 - check ที่ไม่ผ่านมี severity, issue count และ sample
-- ข้อจำกัดปัจจุบัน: reconciliation total เทียบ detail ยังเป็น production recommendation ไม่ได้ทำเป็น blocking rule เพราะแต่ละ sheet มี scope ต่างกันและต้องนิยาม tolerance ก่อน
+- reconciliation ปัจจุบันใช้กับ `disbursement_million_baht` ที่พิสูจน์ grain ได้แล้ว ส่วน measure อื่นยังต้องนิยาม semantic scope และ tolerance ต่อ sheet ก่อน
 
 ### `load.py`
 
@@ -130,6 +131,7 @@ python -m isap_pipeline <command>
 | `test_header_normalization.py` | text/header/number cleaning คงที่ |
 | `test_ocsc_transform.py` | parser สร้าง OCSC long rows จาก workbook structure |
 | `test_cgd_transform.py` | parser แยก expense groups และ measures |
+| `test_data_quality.py` | reconciliation แจ้งเตือนเมื่อ published total ไม่ตรงผลรวม detail |
 | `test_idempotency.py` | โหลด source hash เดิมซ้ำแล้ว row count ไม่เพิ่ม |
 | `test_discovery.py` | manifest baseline แยก same/new release ถูก |
 | `test_downloader.py` | ZIP extraction ใช้ safe output path |
@@ -155,7 +157,7 @@ python -m isap_pipeline <command>
 
 ### ทำไม DQ ผ่านไม่ได้แปลว่าข้อมูลถูกทั้งหมด
 
-DQ ปัจจุบันพิสูจน์ core invariants เช่น presence, range และ duplicate เท่านั้น ยังไม่พิสูจน์ business reconciliation ทุก sheet จึงเปิดเผย limitation และเสนอ total-vs-detail reconciliation เป็นงาน production ลำดับต้น
+DQ ปัจจุบันพิสูจน์ core invariants และ reconciliation ของยอดเบิกจ่ายในกลุ่มที่มี published total แต่ยังไม่ครอบคลุมทุก measure และทุก sheet จึงไม่ควรสรุปว่า DQ ผ่านแล้วเท่ากับ business truth ถูกทุกมิติ
 
 ### ใช้ AI ส่วนไหน
 

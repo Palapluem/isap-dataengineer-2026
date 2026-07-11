@@ -174,6 +174,8 @@ def _parse_profile_sheet(
         entity_name = canonical_entity_name(ws.cell(row_idx, 1).value)
         if not entity_name:
             continue
+        if entity_name == "ร้อยละ":
+            continue
         total = to_int(ws.cell(row_idx, 2).value)
         entity_type = "ministry" if total and entity_name.startswith(("กระทรวง", "สำนักนายกรัฐมนตรี")) else "agency"
         if entity_type == "ministry":

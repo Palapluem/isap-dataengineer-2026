@@ -6,7 +6,7 @@
 2. สร้าง master agency mapping กลางที่มี agency code, ministry code, alias name และ effective date
 3. เพิ่ม schema versioning สำหรับแต่ละ source file เพื่อแยก compatible change กับ breaking change
 4. ทำ automated source monitoring รายเดือนผ่าน GitHub Actions หรือ scheduler พร้อม alert เมื่อ `source_unavailable`
-5. เพิ่ม DQ checks เชิง reconciliation เช่น subtotal เท่ากับผลรวม detail ภายใน tolerance
+5. ขยาย DQ reconciliation จากยอดเบิกจ่ายไปยัง measure อื่นหลังยืนยัน grain และ tolerance ของแต่ละ sheet
 6. แยก secrets/config ออกจาก code หาก production ต้องใช้ proxy, credential หรือ storage account
 7. เพิ่ม observability เช่น run duration, row count trend, DQ failed count และ file hash history
 8. เก็บ raw files ใน object storage แบบ immutable เช่น S3/Blob Storage พร้อม retention policy

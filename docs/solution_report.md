@@ -10,11 +10,11 @@
 
 - raw cells: 125,890 rows
 - workbook sheet inventory: 83 sheets
-- CGD budget execution fact: 2,913 rows
-- OCSC government manpower fact: 5,801 rows
+- CGD budget execution fact: 2,937 rows
+- OCSC government manpower fact: 5,784 rows
 - warehouse output: `data/warehouse/isap.duckdb`
 - EDA notebook: `notebooks/01_eda_data_profiling.ipynb`
-- tests: `python -m pytest` ผ่าน 9 tests
+- tests: `python -m pytest` ผ่าน 16 tests
 
 ## Mapping ต่อเกณฑ์ 120 คะแนน
 

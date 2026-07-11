@@ -27,7 +27,6 @@ src/*.egg-info/
 references/
 
 # AI agent working prompt for this assignment; keep local only.
-assignment/ISAP_DATA_ENG.pdf
 assignment/ISAP_DATA_ENG_AGENT_PROMPT.md
 
 data/raw/*

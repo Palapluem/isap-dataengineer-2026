@@ -8,6 +8,7 @@ src/*.egg-info/
 .pytest_tmp/
 .ruff_cache/
 .ipynb_checkpoints/
+~$*.xlsx
 
 # Local/editor/agent state must never be published.
 .vscode/

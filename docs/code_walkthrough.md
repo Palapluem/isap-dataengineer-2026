@@ -1,6 +1,18 @@
-# Code Walkthrough สำหรับวันสัมภาษณ์
+# โค้ดทำงานอย่างไร
 
-เป้าหมายของเอกสารนี้คือช่วยอธิบาย code ทุกส่วนได้โดยไม่ต้องจำทีละบรรทัด ให้เริ่มจาก responsibility, input/output, decision และ failure mode ของแต่ละ module
+เอกสารนี้ช่วยให้ตาม code ได้โดยไม่ต้องจำทีละบรรทัด ให้เริ่มจากหน้าที่ของแต่ละไฟล์, รับอะไรเข้ามา, ส่งอะไรออกไป และกรณีไหนที่ระบบหยุดพร้อมบอกเหตุผล
+
+## เลือกอ่านตามคำถาม
+
+| อยากรู้เรื่องไหน | เริ่มอ่านไฟล์ |
+|---|---|
+| คำสั่ง `profile`, `run`, `demo` เรียกอะไรบ้าง | `cli.py` |
+| ทำไม OCSC กับ CGD อ่านคนละแบบ | `extract_ocsc.py`, `extract_cgd.py` |
+| ข้อความ, ตัวเลข และวันที่ไทยถูกจัดการอย่างไร | `clean.py` |
+| ทำไมรันไฟล์เดิมซ้ำแล้วไม่เกิดข้อมูลซ้ำ | `metadata.py`, `load.py` |
+| ระบบตรวจข้อมูลใหม่รายเดือนอย่างไร | `discovery.py`, `downloader.py` |
+
+คำศัพท์ที่พบในเอกสารอยู่ที่ [docs/terms_explained.md](terms_explained.md)
 
 ## ภาพรวมการเรียกใช้งาน
 
@@ -11,7 +23,7 @@ python -m isap_pipeline <command>
   -> profile / run / check-new / sync-latest / demo
 ```
 
-`cli.py` เป็น orchestration layer ไม่ควรมี parsing rule จำนวนมาก ส่วน source-specific logic อยู่ใน extractor และ shared cleaning rules อยู่ใน `clean.py`
+`cli.py` เป็นตัวจัดลำดับงาน จึงไม่ควรมีรายละเอียดการอ่าน Excel มากเกินไป กฎเฉพาะของแต่ละแหล่งอยู่ใน extractor และกฎที่ใช้ร่วมกันอยู่ใน `clean.py`
 
 ## Module Map
 

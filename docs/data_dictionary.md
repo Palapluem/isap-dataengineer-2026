@@ -1,8 +1,16 @@
-# Data Dictionary
+# พจนานุกรมข้อมูล (Data Dictionary)
 
 เอกสารนี้อธิบาย grain, หน่วยวัด และความหมายของตารางที่ Data Analyst ใช้ โดย source field names ใน code และ database ใช้ English `snake_case` ส่วนคำอธิบายใช้ภาษาไทย
 
-## Naming and Unit Conventions
+## อ่านก่อนใช้ข้อมูล
+
+1. `grain` หมายถึงหนึ่งแถวแทนอะไร ต้องอ่านก่อนรวมยอดทุกครั้ง
+2. ตัวเลขเงินของ CGD ใช้หน่วยล้านบาท และร้อยละใช้สเกล 0-100
+3. ห้ามรวม `total` กับยอดย่อย หรือรวม `disbursement` กับ `expenditure` โดยยังไม่กำหนดคำถามที่ต้องการตอบ
+
+คำอธิบายศัพท์เพิ่มเติมอยู่ที่ [docs/terms_explained.md](terms_explained.md)
+
+## ชื่อคอลัมน์และหน่วย
 
 | Convention | ความหมาย |
 |---|---|
@@ -14,7 +22,7 @@
 | `source_file_hash` / `sha256` | SHA-256 ของ source file ใช้ lineage และ idempotency |
 | `ingestion_run_id` | รหัสการรันหนึ่งครั้ง ใช้เชื่อม operational evidence |
 
-## Mart Tables
+## ตารางที่ Analyst ใช้
 
 ### `mart.fact_budget_execution`
 

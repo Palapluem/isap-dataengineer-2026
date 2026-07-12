@@ -1,14 +1,14 @@
-# ISAP Submission Readiness Checklist
+# เช็กลิสต์ความพร้อมก่อนส่ง ISAP
 
 เอกสารนี้ใช้ตรวจความพร้อมก่อนส่งงานและใช้เป็น cheat sheet ตอน demo/interview สำหรับโจทย์ ISAP Data Engineer
 
-## Overall Assessment
+## ภาพรวม
 
 สถานะปัจจุบัน: พร้อมส่งแบบมี caveat
 
 เหตุผล: pipeline รันได้จริง, มี warehouse, มี EDA notebook, มี data profiling report, มี DW design, มี tests และมี demo queries ครบตามแกนหลักของโจทย์แล้ว จุดที่ควรพูด caveat คือ official source pages อาจตอบ `403 Forbidden` ในบาง environment จึงต้องอธิบาย fallback `source_unavailable` และ local dataset assumption ให้ชัด
 
-## Score Mapping
+## เทียบกับสิ่งที่โจทย์ต้องการ
 
 | เกณฑ์จากโจทย์ | สถานะ | หลักฐานใน repo |
 |---|---|---|
@@ -19,10 +19,10 @@
 | Automated pipeline 60 คะแนน | ครบ | `src/isap_pipeline/cli.py`, `extract_ocsc.py`, `extract_cgd.py`, `clean.py`, `dq.py`, `load.py`, `downloader.py` |
 | Monthly new-data check | มีแล้ว มี caveat | `src/isap_pipeline/discovery.py`, `.github/workflows/monthly-check.yml`, `data/processed/source_check_latest.json` หลังรัน `check-new` |
 | Junior recommendations 20 คะแนน | ครบ | `docs/junior_recommendations.md` |
-| Demo readiness | ครบ | `docs/demo_script.md`, `sql/004_sample_queries.sql`, `data/warehouse/isap.duckdb` |
+| Demo readiness | ครบ | `docs/demo_script.md`, `sql/004_sample_queries.sql` และคำสั่ง rebuild warehouse จาก source Excel |
 | Code explainability | ดี | `docs/code_walkthrough.md`, module แยกตามหน้าที่, มี CLI commands, มี 16 tests |
 
-## Current Validation Snapshot
+## ผลตรวจล่าสุด
 
 รันล่าสุดในเครื่องนี้:
 
@@ -35,7 +35,7 @@
 | Warehouse tables | raw/staging/mart มีครบ |
 | `check-new` | command ทำงาน แต่เว็บทางการตอบ `403 Forbidden` ใน environment นี้ |
 
-## Visuals To Prepare
+## ภาพที่ควรเตรียม
 
 มีภาพ Mermaid ใน `docs/submission_overview.md` และ `docs/warehouse_design.md` แล้ว สำหรับ screenshot/PNG เพิ่มเติมเป็น optional ถ้าต้องการใช้เปิดระหว่าง demo:
 
@@ -47,7 +47,7 @@
 | DuckDB table list / row counts | VS Code Database Client หรือ DuckDB CLI | พิสูจน์ว่ามี warehouse จริง |
 | Demo query output | `python -m isap_pipeline demo` | พิสูจน์ว่า mart query ได้และตอบ business question ได้ |
 
-## Improvements If Time Allows
+## เพิ่มได้ถ้ามีเวลา
 
 1. เพิ่ม screenshot หรือ exported PNG ลง `docs/assets/` แล้ว embed ใน README/รายงานหลัก
 2. เพิ่ม integration test สำหรับ workbook sample ที่มี merged cells และ multi-row headers ซับซ้อนหลายแบบ
@@ -55,7 +55,7 @@
 4. เพิ่ม master agency mapping design/table stub พร้อม human-review workflow
 5. เพิ่ม export PDF/HTML ของ notebook หรือ report สำหรับเปิดง่ายในวันสัมภาษณ์
 
-## Interview Talking Points
+## ประโยคที่ใช้ตอบตอนสัมภาษณ์
 
 พูดแกนหลักแบบนี้จะชัด:
 

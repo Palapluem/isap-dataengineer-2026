@@ -1,16 +1,36 @@
-# Junior Recommendations
+# ข้อเสนอแนะต่อ Senior Data Engineer
 
-ข้อเสนอแนะต่อ Senior Data Engineer เพื่อให้โครงการนี้ production-ready:
+pipeline ในงานนี้พิสูจน์การทำงานกับไฟล์ baseline ได้แล้ว ข้อเสนอด้านล่างเรียงตามความเสี่ยงที่ควรลดก่อน ไม่ใช่รายการเครื่องมือที่ต้องรีบเพิ่มทั้งหมด
 
-1. ทำ data contract กับ OCSC และ CGD ระบุ expected workbook structure, sheet naming, header rows และ release cadence
-2. สร้าง master agency mapping กลางที่มี agency code, ministry code, alias name และ effective date
-3. เพิ่ม schema versioning สำหรับแต่ละ source file เพื่อแยก compatible change กับ breaking change
-4. ทำ automated source monitoring รายเดือนผ่าน GitHub Actions หรือ scheduler พร้อม alert เมื่อ `source_unavailable`
-5. ขยาย DQ reconciliation จากยอดเบิกจ่ายไปยัง measure อื่นหลังยืนยัน grain และ tolerance ของแต่ละ sheet
-6. แยก secrets/config ออกจาก code หาก production ต้องใช้ proxy, credential หรือ storage account
-7. เพิ่ม observability เช่น run duration, row count trend, DQ failed count และ file hash history
-8. เก็บ raw files ใน object storage แบบ immutable เช่น S3/Blob Storage พร้อม retention policy
-9. ทำ data dictionary และ business glossary ร่วมกับ analyst เพื่อกำหนดนิยามคำว่าเบิกจ่าย, ใช้จ่าย, จัดสรร และ PO
-10. ทำ backfill strategy สำหรับไฟล์ย้อนหลัง เพื่อให้ mart มีหลาย fiscal years ไม่ใช่แค่ latest snapshot
-11. เพิ่ม integration tests ด้วย sample workbook ที่เลียนแบบ merged cells และ multi-row headers จริง
-12. เตรียม dashboard/semantic layer เช่น OBT view สำหรับคำถามยอดนิยม: top manpower, low disbursement, workforce vs budget
+## อันดับ 1: ตกลงรูปแบบข้อมูลกับเจ้าของข้อมูล
+
+- ทำ **data contract** ที่บอกว่าแต่ละไฟล์ควรมี sheet ใด, header อยู่แถวไหน, ชื่อคอลัมน์ใดต้องมี และออก release เมื่อไร
+- ทำ **schema versioning** เพื่อรู้ว่าการเปลี่ยนไฟล์ครั้งใดอ่านต่อได้ และครั้งใดต้องแก้ parser ก่อน
+- เพิ่ม integration test ด้วย Excel ตัวอย่างที่มี merged cells และ multi-row headers เหมือนของจริง
+
+ผลที่ได้: ถ้า source เปลี่ยน ระบบจะหยุดพร้อมบอกจุดที่เปลี่ยน แทนการเดาข้อมูลแล้วสร้างผลวิเคราะห์ผิด
+
+## อันดับ 2: ทำรายชื่อหน่วยงานกลางที่ตรวจโดยคน
+
+- สร้าง master agency mapping ที่มี agency code, ministry code, alias name และวันที่เริ่มใช้
+- ให้คนตรวจความถูกต้องของชื่อที่เชื่อมระหว่าง OCSC กับ CGD ก่อนนำไปใช้เป็นข้อมูลอ้างอิงกลาง
+
+ผลที่ได้: การเชื่อมข้าม source ไม่พึ่งการเทียบชื่อแบบตรงตัวเพียงอย่างเดียว
+
+## อันดับ 3: เพิ่มการตรวจและการแจ้งเตือน
+
+- ขยายการเทียบยอดรวมกับยอดย่อยไปยังตัวเลขอื่น หลังตกลงความหมายและค่าคลาดเคลื่อนที่ยอมรับได้ของแต่ละ sheet
+- เก็บเวลา run, จำนวนแถว, จำนวน DQ ที่ไม่ผ่าน และประวัติ file hash เพื่อดูแนวโน้มผิดปกติ
+- ทำ alert เมื่อ source เข้าไม่ได้หรือจำนวนแถวเปลี่ยนผิดคาด แทนการรอให้คนมาเห็นเอง
+
+ผลที่ได้: รู้เร็วขึ้นว่าข้อมูลหรือ pipeline เริ่มผิดปกติเมื่อไร
+
+## อันดับ 4: เตรียมให้ใช้งานระยะยาว
+
+- เก็บ raw files ใน object storage ที่แก้ย้อนหลังไม่ได้ พร้อมกำหนดระยะเวลาเก็บ
+- แยก secrets และ config ออกจาก code เมื่อเริ่มใช้ proxy, credential หรือ cloud storage
+- วางแผน backfill สำหรับไฟล์ย้อนหลัง เพื่อให้ mart มีหลายปี ไม่ใช่เฉพาะ snapshot ล่าสุด
+- ทำ data dictionary และ business glossary ร่วมกับ analyst เพื่อให้นิยามคำว่าเบิกจ่าย, ใช้จ่าย, จัดสรร และ PO ตรงกัน
+- เพิ่ม view หรือ semantic layer สำหรับคำถามที่ใช้บ่อย เช่น กำลังพลสูงสุด, การเบิกจ่ายต่ำ และการเทียบกำลังพลกับงบประมาณ
+
+ผลที่ได้: ระบบเปลี่ยนจาก take-home demo ไปสู่บริการข้อมูลที่หลายคนใช้ร่วมกันได้อย่างปลอดภัย

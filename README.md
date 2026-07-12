@@ -4,6 +4,8 @@
 
 ผลลัพธ์หลักเป็น local data pipeline ที่ใช้ Python และ DuckDB จึงเปิดดูและสาธิตได้บนเครื่องเดียว โดยไม่ต้องติดตั้ง database server
 
+คำอย่าง `raw`, `staging`, `mart`, `grain` และ `idempotency` มีคำอธิบายแบบภาษาง่ายที่ [docs/terms_explained.md](docs/terms_explained.md)
+
 ## Project Overview
 
 repository นี้ตอบโจทย์ครบทั้ง 4 ส่วนของข้อสอบ:
@@ -204,6 +206,7 @@ python -m isap_pipeline sync-latest --warehouse "data/warehouse/isap.duckdb"
 | ภาพรวมสิ่งที่ส่งและหลักฐาน | [docs/submission_overview.md](docs/submission_overview.md) |
 | Warehouse, grain และ schema | [docs/warehouse_design.md](docs/warehouse_design.md) |
 | Data dictionary | [docs/data_dictionary.md](docs/data_dictionary.md) |
+| คำศัพท์เทคนิคแบบภาษาง่าย | [docs/terms_explained.md](docs/terms_explained.md) |
 | EDA และปัญหาของแต่ละ dataset | [notebooks/01_eda_data_profiling.ipynb](notebooks/01_eda_data_profiling.ipynb), [docs/data_profiling_report.md](docs/data_profiling_report.md) |
 | คำสั่งและผลที่ควรเห็น | [docs/demo_script.md](docs/demo_script.md) |
 | ข้อเสนอแนะต่อ Senior Data Engineer | [docs/junior_recommendations.md](docs/junior_recommendations.md) |

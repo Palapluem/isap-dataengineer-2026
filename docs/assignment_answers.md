@@ -9,6 +9,7 @@
 | คำตอบครบทั้ง 4 ข้อแบบเรียงตามโจทย์ | เอกสารนี้ |
 | ภาพรวม deliverable และสิ่งที่ commit | `docs/submission_overview.md` |
 | แผนผัง warehouse และความหมายของตาราง | `docs/warehouse_design.md`, `docs/data_dictionary.md` |
+| คำศัพท์ทางเทคนิคแบบภาษาง่าย | `docs/terms_explained.md` |
 | หลักฐาน EDA ของ OCSC และ CGD | `notebooks/01_eda_data_profiling.ipynb`, `docs/data_profiling_report.md` |
 | คำสั่ง pipeline, ผลที่ควรเห็น และ demo | `README.md`, `docs/demo_script.md` |
 

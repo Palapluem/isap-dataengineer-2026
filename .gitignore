@@ -34,6 +34,7 @@ scripts/
 
 # Interview speaking notes stay local; the public repository keeps only runnable evidence.
 docs/presentation_guide.md
+presentation_assets/
 
 data/raw/*
 !data/raw/.gitkeep

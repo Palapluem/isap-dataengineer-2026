@@ -237,29 +237,17 @@ Code quality:
 
 กำหนด agency code กลาง, ministry hierarchy, aliases, effective date และสถานะการจับคู่ การใช้ fuzzy matching ควรสร้าง candidate เพื่อให้คน review ไม่ควร auto-join ลง production เพราะชื่อคล้ายกันอาจเป็นคนละหน่วยงาน
 
-### Priority 3: เพิ่ม Reconciliation กับยอดในรายงาน
+### Priority 3: เพิ่ม Reconciliation, Monitoring และ Alerting
 
-ตรวจผลรวม detail เทียบ total/subtotal ที่ต้นทางเผยแพร่ด้วย tolerance ที่กำหนด แยก warning จาก blocking error เพราะข้อมูลจริงอาจมี rounding หรือ business exception การเช็กนี้ให้ความมั่นใจมากกว่าตรวจเพียง non-negative และ duplicate
+ตรวจผลรวม detail เทียบ total/subtotal ที่ต้นทางเผยแพร่ด้วย tolerance ที่กำหนด แยก warning จาก blocking error เพราะข้อมูลจริงอาจมี rounding หรือ business exception และติดตาม run duration, row-count trend, DQ failures, schema fingerprint และ source availability พร้อม alert เมื่อผิดจาก baseline การมี schedule อย่างเดียวไม่เพียงพอถ้าไม่มีคนรู้ว่า job ล้ม
 
-### Priority 4: ทำ Immutable Raw Zone และ Lineage
+### Priority 4: ทำ Immutable Raw Zone, Lineage และ Release Policy
 
-เก็บไฟล์ต้นฉบับใน object storage แบบ write-once พร้อม SHA-256, source URL, checked time และ retention policy เพื่อ replay/rebuild ได้ และทำให้ตอบได้ว่าตัวเลขใน mart มาจาก release ใด
+เก็บไฟล์ต้นฉบับใน object storage แบบ write-once พร้อม SHA-256, source URL, checked time และ retention policy เพื่อ replay/rebuild ได้ และทำให้ตอบได้ว่าตัวเลขใน mart มาจาก release ใด กำหนดด้วยว่าจะจัดการ backfill, correction และ revision อย่างไร เพื่อไม่ให้ analyst สับสนระหว่าง latest snapshot กับประวัติย้อนหลัง
 
-### Priority 5: เพิ่ม Observability และ Alerting
+### Priority 5: ทำ Semantic Layer และวาง Production Migration ตามการใช้งานจริง
 
-ติดตาม run duration, downloaded bytes, row count trend, schema fingerprint, DQ failures และ source availability พร้อม alert เมื่อผิดจาก baseline การมี schedule อย่างเดียวไม่เพียงพอถ้าไม่มีคนรู้ว่า job ล้ม
-
-### Priority 6: กำหนด Backfill และ Release Policy
-
-แยก latest snapshot, historical releases และ correction/revision ให้ชัด กำหนดว่าจะ replace release เดิมหรือเก็บ revision เพื่อให้ analyst เปรียบเทียบย้อนหลังได้โดยไม่สับสน
-
-### Priority 7: ทำ Semantic Layer ร่วมกับ Data Analyst
-
-ตกลงนิยามคำว่า เบิกจ่าย, ใช้จ่าย, จัดสรร, PO, กำลังพล และ ratio ข้ามแหล่งก่อนสร้าง dashboard หลีกเลี่ยง metric ที่ดูคำนวณได้แต่เปรียบเทียบคนละช่วงเวลา หรือคนละ entity scope
-
-### Priority 8: วาง Production Migration ตามการใช้งานจริง
-
-DuckDB เหมาะกับ take-home และ single-user local analysis หากมี concurrent users, SLA, access control หรือข้อมูลหลายปีจำนวนมาก ค่อยย้าย storage/compute ไป platform ที่รองรับ โดยคง raw/staging/mart contract และ automated tests เดิม
+ตกลงนิยามคำว่า เบิกจ่าย, ใช้จ่าย, จัดสรร, PO, กำลังพล และ ratio ข้ามแหล่งก่อนสร้าง dashboard และทำ data dictionary ร่วมกับ analyst เพื่อหลีกเลี่ยง metric ที่ดูคำนวณได้แต่เปรียบเทียบคนละช่วงเวลา หรือคนละ entity scope DuckDB เหมาะกับ take-home และ single-user local analysis; หากมี concurrent users, SLA, access control หรือข้อมูลหลายปีจำนวนมาก ค่อยย้าย storage/compute ไป platform ที่รองรับ โดยคง raw/staging/mart contract และ automated tests เดิม
 
 รายการเต็มอยู่ใน `docs/junior_recommendations.md`
 

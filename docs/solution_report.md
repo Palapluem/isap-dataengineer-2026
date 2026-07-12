@@ -23,7 +23,7 @@
 | DW design 20 คะแนน | ออกแบบ raw/staging/mart, star schema, fact/dimension, grain และเหตุผลใน `docs/warehouse_design.md` |
 | EDA & Data Profiling 20 คะแนน | inspect workbook จริงทั้ง 2 ไฟล์และเขียน report ใน `docs/data_profiling_report.md` |
 | Automated Pipeline 60 คะแนน | CLI `profile`, `run`, `check-new`, `demo`; มี extractor, cleaning, DQ, DuckDB loading และ SQL sample |
-| Junior Recommendation 20 คะแนน | ข้อเสนอแนะ 12 ข้อใน `docs/junior_recommendations.md` |
+| Junior Recommendation 20 คะแนน | ข้อเสนอแนะ 5 เรื่องที่เรียงตามความเสี่ยงและผลกระทบใน `docs/junior_recommendations.md` |
 | GitHub/Demo | repo มี source code, tests, SQL, config, README และ demo script |
 | ใช้ AI ได้แต่อธิบาย code ได้ | module แยกชัดเจน อ่านง่าย มี type hints และเอกสารอธิบาย flow |
 

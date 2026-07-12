@@ -55,7 +55,7 @@ flowchart LR
 |---|---|---|
 | Data Warehouse design | `docs/warehouse_design.md`, `sql/001_create_raw.sql`, `sql/002_create_staging.sql`, `sql/003_create_marts.sql` | มี architecture, ERD, table inventory, fact grain และ design tradeoffs |
 | EDA and Data Profiling | `notebooks/01_eda_data_profiling.ipynb`, `docs/data_profiling_report.md` | แยก OCSC และ CGD ชัดเจน พร้อม workbook/sheet-level profiling |
-| Automated Data Pipeline | `src/isap_pipeline/`, `sql/`, `.github/workflows/ci.yml`, `.github/workflows/monthly-check.yml` | มี extraction, cleaning, loading, DQ, idempotency, source monitoring และ tests |
+| Automated Data Pipeline | `src/isap_pipeline/`, `docs/automation_walkthrough.md`, `sql/`, `.github/workflows/ci.yml`, `.github/workflows/monthly-check.yml` | มี extraction, cleaning, loading, DQ, idempotency, source monitoring และ tests |
 | Junior Recommendations | `docs/junior_recommendations.md` | ข้อเสนอ production readiness จากมุม Junior Data Engineer |
 | Demo Readiness | `README.md`, `docs/demo_script.md`, `sql/004_sample_queries.sql` | มีคำสั่ง setup/profile/run/demo/test ที่รันตามได้ |
 

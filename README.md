@@ -209,6 +209,7 @@ python -m isap_pipeline sync-latest --warehouse "data/warehouse/isap.duckdb"
 | คำศัพท์เทคนิคแบบภาษาง่าย | [docs/terms_explained.md](docs/terms_explained.md) |
 | EDA และปัญหาของแต่ละ dataset | [notebooks/01_eda_data_profiling.ipynb](notebooks/01_eda_data_profiling.ipynb), [docs/data_profiling_report.md](docs/data_profiling_report.md) |
 | คำสั่งและผลที่ควรเห็น | [docs/demo_script.md](docs/demo_script.md) |
+| Code ของ automation อธิบายทีละขั้น | [docs/automation_walkthrough.md](docs/automation_walkthrough.md) |
 | ข้อเสนอแนะต่อ Senior Data Engineer | [docs/junior_recommendations.md](docs/junior_recommendations.md) |
 
 ## Limitations and Next Steps

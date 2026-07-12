@@ -1,0 +1,381 @@
+# Automated Pipeline: อธิบาย code ทีละขั้น
+
+เอกสารนี้อธิบาย implementation ของข้อ 3 ในโจทย์: ดึงข้อมูล, จัดข้อมูล, ตรวจคุณภาพ, โหลดเข้า warehouse, ตรวจ release ใหม่รายเดือน และ ingest release ใหม่ได้ภายใต้สมมติฐานว่าโครงสร้างข้อมูลยังมีความหมายเดิม
+
+เนื้อหานี้เน้น Python code ที่อยู่ใน `src/isap_pipeline/` ไม่ใช่ PowerShell demo script
+
+## ภาพรวมการทำงาน
+
+```text
+config -> inspect Excel -> extract raw cells -> parse by source
+       -> clean values -> data-quality checks -> idempotent DuckDB load
+       -> demo SQL
+
+official source page -> discovery -> compare manifest -> download -> run pipeline
+```
+
+## 1. CLI เป็นจุดสั่งงานเดียว
+
+ไฟล์: [`src/isap_pipeline/cli.py`](../src/isap_pipeline/cli.py)
+
+ผู้ใช้ไม่ต้องเรียกแต่ละ module เอง เพราะ `main()` แปลงคำสั่งให้เป็น function ที่ถูกต้อง:
+
+```python
+if args.command == "profile":
+    return command_profile(Path(args.ocsc), Path(args.cgd))
+if args.command == "run":
+    return command_run(Path(args.ocsc), Path(args.cgd), Path(args.warehouse))
+if args.command == "check-new":
+    return command_check_new(save=args.save_manifest)
+if args.command == "sync-latest":
+    return command_sync_latest(Path(args.download_dir), Path(args.warehouse))
+if args.command == "demo":
+    return command_demo(Path(args.warehouse))
+```
+
+ความหมายแบบง่าย: `cli.py` เป็นตัวจัดลำดับงาน ส่วนกฎอ่าน Excel อยู่ใน module ที่รับผิดชอบ source นั้นโดยตรง
+
+## 2. Profile โครงสร้าง Excel ก่อนอ่านข้อมูล
+
+ไฟล์: [`excel_inspector.py`](../src/isap_pipeline/excel_inspector.py)
+
+คำสั่ง `profile` เปิด workbook จริงและสร้าง profile ต่อ sheet เช่น จำนวนแถว, จำนวนคอลัมน์, merged cells, formula cells, blank rows และตำแหน่ง header ที่คาดไว้
+
+```python
+profiles = {
+    "generated_at": utc_now_iso(),
+    "ocsc": inspect_workbook(ocsc_path),
+    "cgd": inspect_workbook(cgd_path),
+}
+cfg.profile_output.write_text(
+    json.dumps(profiles, ensure_ascii=False, indent=2), encoding="utf-8"
+)
+write_profile_markdown(profiles, Path("docs/data_profiling_report.md"))
+```
+
+ผลลัพธ์คือ JSON สำหรับตรวจด้วยโปรแกรม และ Markdown สำหรับคนอ่าน จุดนี้ตอบโจทย์ EDA เชิงโครงสร้างก่อนเริ่ม parse ตัวเลข
+
+## 3. สร้าง metadata ของไฟล์เพื่อ trace กลับได้
+
+ไฟล์: [`metadata.py`](../src/isap_pipeline/metadata.py), [`cli.py`](../src/isap_pipeline/cli.py)
+
+ทุก run สร้าง `run_id` ใหม่ และทุก source file มี SHA-256 ของเนื้อหาไฟล์:
+
+```python
+run_id = new_run_id()
+ocsc_meta = _source_metadata("ocsc_government_manpower", ocsc_path, sources)
+cgd_meta = _source_metadata("cgd_budget_execution", cgd_path, sources)
+
+return SourceFileMetadata(
+    dataset_name=dataset_name,
+    source_name=getattr(source_cfg, "name", dataset_name),
+    path=path,
+    sha256=sha256_file(path),
+    fiscal_year=fiscal_year,
+    fiscal_year_be=fiscal_year_be,
+)
+```
+
+จึงตอบได้ว่า row นี้มาจาก run ไหน, ไฟล์ใด, sheet ใด และ release ใด โดยไม่พึ่งชื่อไฟล์อย่างเดียว
+
+## 4. Extract raw cells ของทุก sheet
+
+ไฟล์: [`extract_ocsc.py`](../src/isap_pipeline/extract_ocsc.py), [`extract_cgd.py`](../src/isap_pipeline/extract_cgd.py)
+
+ทั้งสอง source เก็บ raw cells ของทุก sheet ก่อน parse ตารางสำคัญ เพื่อให้ยังมีหลักฐานต้นทางเมื่อ parser ต้องแก้ในอนาคต
+
+```python
+for row in ws.iter_rows():
+    for cell in row:
+        if cell.value is None:
+            continue
+        rows.append(
+            {
+                "ingestion_run_id": run_id,
+                "dataset_name": meta.dataset_name,
+                "source_file_hash": meta.sha256,
+                "sheet_index": sheet_index,
+                "sheet_name": ws.title,
+                "row_number": cell.row,
+                "column_number": cell.column,
+                "cell_value": str(cell.value),
+            }
+        )
+```
+
+raw layer ไม่ได้มีไว้ให้ Analyst query ทุกวัน แต่มีไว้ตอบคำถามว่า “ตัวเลขนี้มาจากไหน” และช่วย debug layout ที่เปลี่ยน
+
+## 5. Parse OCSC และ CGD คนละแบบ
+
+### OCSC: เก็บบริบทกระทรวงและแยก metric
+
+ไฟล์: [`extract_ocsc.py`](../src/isap_pipeline/extract_ocsc.py)
+
+OCSC มีหลาย metric อยู่ตามคอลัมน์ จึงเปลี่ยนจาก wide table เป็น long rows และเก็บกระทรวงที่เป็น parent ของหน่วยงานไว้
+
+```python
+for col_idx, metric_name in WORKFORCE_METRIC_COLUMNS.items():
+    value = to_int(ws.cell(row_idx, col_idx).value)
+    if value is None:
+        continue
+    rows.append(
+        {
+            "entity_type": entity_type,
+            "ministry_name": ministry_name,
+            "agency_name": entity_name,
+            "metric_name": metric_name,
+            "metric_group": "employment_type",
+            "headcount": value,
+            "source_unit": "person",
+        }
+    )
+```
+
+แถว `ร้อยละ` ถูกตัดออกจาก profile parser เพื่อไม่ให้ตัวเลข percent ถูกเก็บเป็นจำนวนคน:
+
+```python
+entity_name = canonical_entity_name(ws.cell(row_idx, 1).value)
+if not entity_name:
+    continue
+if entity_name == "ร้อยละ":
+    continue
+```
+
+### CGD: อ่าน header 2 ชั้นและแยกหมวดรายจ่าย
+
+ไฟล์: [`extract_cgd.py`](../src/isap_pipeline/extract_cgd.py)
+
+CGD มี header group `รายจ่ายประจำ`, `รายจ่ายลงทุน`, `รวม` จึงหา span ของแต่ละกลุ่ม แล้วสร้างหนึ่ง row ต่อ `expense_category`:
+
+```python
+if label in {"รายจ่ายประจำ", "รายจ่ายลงทุน", "รวม"}:
+    starts.append((_expense_category(label), col_idx))
+
+for expense_category, start_col, end_col in group_spans:
+    measures = _measure_values(ws, row_idx, subheader_row, start_col, end_col)
+    rows.append(
+        _base_row(
+            meta, run_id, ws.title, row_idx, entity_type_current,
+            entity_name, entity_code, expense_category, as_of_date,
+        )
+        | measures
+    )
+```
+
+ชื่อ sheet บอกมุมรายงาน `เบิกจ่าย` หรือ `ใช้จ่าย`:
+
+```python
+def _report_type_from_sheet(sheet_name: str) -> str:
+    normalized = sheet_name.strip()
+    if "ใช้จ่าย" in normalized or normalized.endswith("(ใช้"):
+        return "expenditure"
+    return "disbursement"
+```
+
+## 6. Clean ข้อความ ตัวเลข และวันที่ไทยด้วยกฎกลาง
+
+ไฟล์: [`clean.py`](../src/isap_pipeline/clean.py)
+
+กฎที่ใช้ทั้งสอง source อยู่ในที่เดียว เพื่อลดการเขียน logic ซ้ำและทำ unit test ได้ง่าย
+
+```python
+def normalize_text(value: Any) -> str:
+    if value is None:
+        return ""
+    text = str(value).replace("\n", " ").replace("\r", " ")
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+def to_number(value: Any) -> float | None:
+    text = normalize_text(value)
+    if not text or text in {"-", "#REF!", "#DIV/0!", "#VALUE!"}:
+        return None
+    text = text.replace(",", "").replace("%", "")
+    try:
+        return float(text)
+    except ValueError:
+        return None
+```
+
+การแปลงวันที่ภาษาไทยเปลี่ยน พ.ศ. เป็น ค.ศ. ก่อนสร้าง `date` object:
+
+```python
+def parse_thai_date(text: str) -> date | None:
+    value = normalize_text(text)
+    match = re.search(r"(\d{1,2})\s+([ก-๙]+)\s+(\d{4})", value)
+    if not match:
+        return None
+    day = int(match.group(1))
+    month = THAI_MONTHS.get(match.group(2))
+    year = thai_be_year_to_ce(int(match.group(3)))
+    return date(year, month, day)
+```
+
+ช่องว่างหรือ Excel error token กลายเป็น `None` ไม่ใช่ศูนย์ เพราะไม่มีหลักฐานว่า “ไม่มีค่า” หมายถึง “0” เสมอไป
+
+## 7. ตรวจคุณภาพข้อมูลก่อนโหลด
+
+ไฟล์: [`dq.py`](../src/isap_pipeline/dq.py)
+
+`run_data_quality_checks()` รวมผล check ของ CGD และ OCSC เป็น DataFrame เดียว เพื่อบันทึกทั้ง JSON และ table ใน warehouse:
+
+```python
+issues: list[DQIssue] = []
+issues.extend(_check_cgd(cgd_budget_execution))
+issues.extend(_check_ocsc(ocsc_workforce))
+if not issues:
+    issues.append(
+        DQIssue(
+            check_name="all_core_checks",
+            severity="info",
+            dataset_name="all",
+            table_name="all",
+            issue_count=0,
+            sample="All configured core data-quality checks passed.",
+            status="passed",
+        )
+    )
+```
+
+ตัวอย่าง rule ที่ตรวจจริง:
+
+```python
+bad = df[df[col].notna() & ((df[col] < 0) | (df[col] > 100))]
+
+keys = [
+    "source_file_hash", "sheet_name", "entity_name", "entity_code",
+    "expense_category", "report_type",
+]
+duplicated = df[df.duplicated(keys, keep=False)]
+```
+
+สำหรับ CGD ยังเทียบยอด `total` ที่ต้นทางเผยแพร่กับผลรวม detail ในกลุ่มที่มี grain เปรียบเทียบได้ โดยมี tolerance สำหรับ floating-point rounding
+
+## 8. โหลด DuckDB แบบรันซ้ำไม่เกิดข้อมูลซ้ำ
+
+ไฟล์: [`load.py`](../src/isap_pipeline/load.py)
+
+ก่อน insert ระบบหา hashes ของ source files ในรอบนั้น แล้วลบข้อมูลของ hash เดิมจากทุก layer ที่เกี่ยวข้อง:
+
+```python
+hashes = sorted(set(source_files["sha256"].dropna().astype(str).tolist()))
+_delete_existing(con, hashes)
+```
+
+```python
+for table in tables:
+    for file_hash in hashes:
+        if table == "raw.source_files":
+            con.execute(f"DELETE FROM {table} WHERE sha256 = ?", [file_hash])
+        elif table == "mart.fact_data_quality_issue":
+            con.execute(
+                f"DELETE FROM {table} WHERE source_file_hash LIKE '%' || ? || '%'",
+                [file_hash],
+            )
+        else:
+            con.execute(f"DELETE FROM {table} WHERE source_file_hash = ?", [file_hash])
+```
+
+จากนั้น insert raw, staging และ mart ใหม่จากผล parse ล่าสุด แล้ว rebuild dimensions ความหมายคือ file เดิมมาอีกครั้งได้โดย row count ไม่เพิ่ม แต่ถ้าเนื้อหาเปลี่ยน SHA-256 จะเปลี่ยนและถูกถือเป็น release ใหม่
+
+## 9. ตรวจ release ใหม่รายเดือน
+
+ไฟล์: [`discovery.py`](../src/isap_pipeline/discovery.py), [`config/sources.yml`](../config/sources.yml)
+
+`discover_source()` เปิดหน้าเว็บ, หา link ที่ลงท้ายด้วย `.xlsx`, `.xls` หรือ `.zip`, แล้วคืน `source_unavailable` หาก request ล้มเหลวหรือ static HTML ไม่มี link ที่ใช้ได้:
+
+```python
+try:
+    response = requests.get(config.page_url, headers=REQUEST_HEADERS, timeout=timeout)
+    response.raise_for_status()
+except requests.RequestException as exc:
+    return DiscoveredFile(
+        source_name=config.name,
+        dataset_name=config.dataset_name,
+        status="source_unavailable",
+        source_page_url=config.page_url,
+        file_url=None,
+        message=str(exc),
+    )
+```
+
+ผลล่าสุดถูกเทียบกับ manifest จาก `file_url`, `filename` และ `publish_date`:
+
+```python
+comparable_fields = [
+    field
+    for field in ("file_url", "filename", "publish_date")
+    if prior.get(field) is not None
+]
+changed = any(prior.get(field) != current.get(field) for field in comparable_fields)
+status = "new_data_found" if changed or not comparable_fields else "no_new_data"
+```
+
+จุดสำคัญคือ `source_unavailable` ไม่ถูกเปลี่ยนเป็น `no_new_data` เพราะ network failure ไม่ใช่หลักฐานว่าไม่มี release ใหม่
+
+## 10. Download และ ingest release ใหม่แบบไม่ partial load
+
+ไฟล์: [`downloader.py`](../src/isap_pipeline/downloader.py), [`cli.py`](../src/isap_pipeline/cli.py)
+
+download ใช้ streaming เพื่อไม่ต้องเก็บไฟล์ทั้งหมดใน memory:
+
+```python
+with requests.get(url, headers=DOWNLOAD_HEADERS, timeout=timeout, stream=True) as response:
+    response.raise_for_status()
+    with target_path.open("wb") as handle:
+        for chunk in response.iter_content(chunk_size=1024 * 1024):
+            if chunk:
+                handle.write(chunk)
+return {"path": str(target_path), "sha256": sha256_file(target_path)}
+```
+
+`sync-latest` ตรวจทั้งสอง source ให้พร้อมก่อน download และจะ update manifest หลัง `command_run()` สำเร็จเท่านั้น:
+
+```python
+unavailable = [item for item in discovered if item.status != "discovered" or not item.file_url]
+if unavailable:
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    LOGGER.error("Cannot sync latest files because one or more source pages are unavailable.")
+    return 1
+
+exit_code = command_run(
+    downloaded["ocsc_government_manpower"],
+    downloaded["cgd_budget_execution"],
+    warehouse_path,
+)
+if exit_code == 0:
+    save_manifest(discovered, cfg.manifest_path)
+```
+
+นี่คือเหตุผลที่ระบบไม่ทำ partial load: ถ้า source ใด source หนึ่งไม่พร้อม ระบบหยุดก่อน run pipeline
+
+## 11. CI และการทดสอบ
+
+ไฟล์: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [`.github/workflows/monthly-check.yml`](../.github/workflows/monthly-check.yml), [`tests/`](../tests)
+
+CI รันทุก push และ pull request:
+
+```yaml
+- name: Lint
+  run: python -m ruff check .
+- name: Test
+  run: python -m pytest
+```
+
+monthly workflow รันวันที่ 1 ของทุกเดือน เวลา 02:00 UTC และอัปโหลด JSON หลักฐานของผลตรวจ แม้ command จะล้มเหลว:
+
+```yaml
+on:
+  schedule:
+    - cron: "0 2 1 * *"
+
+- name: Upload source-check evidence
+  if: always()
+  uses: actions/upload-artifact@v4
+```
+
+tests ปัจจุบันครอบคลุม date conversion, header normalization, OCSC/CGD transforms, DQ, idempotency, manifest comparison, ZIP extraction และ sync orchestration
+
+## สรุปสำหรับการตอบในห้องสัมภาษณ์
+
+> Automation ของงานนี้ไม่ใช่แค่ตั้งเวลา run ครับ แต่เริ่มจากตรวจว่ามีไฟล์ใหม่จริงหรือไม่, หยุดอย่างปลอดภัยเมื่อเว็บเข้าถึงไม่ได้, อ่าน source-specific layout, ตรวจคุณภาพข้อมูล, โหลดด้วย file hash เพื่อไม่ให้ข้อมูลซ้ำ และมี tests/CI คอยตรวจ logic ทุกครั้งที่ code เปลี่ยน

@@ -14,6 +14,8 @@
 
 คำศัพท์ที่พบในเอกสารอยู่ที่ [docs/terms_explained.md](terms_explained.md)
 
+หากต้องการดู flow ของ automation พร้อม code excerpt จริง ให้เปิด [docs/automation_walkthrough.md](automation_walkthrough.md)
+
 ## ภาพรวมการเรียกใช้งาน
 
 ```text

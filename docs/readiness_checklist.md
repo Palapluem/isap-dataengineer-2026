@@ -16,11 +16,11 @@
 | Data Warehouse design 20 คะแนน | ครบ | `docs/warehouse_design.md`, `sql/001_create_raw.sql`, `sql/002_create_staging.sql`, `sql/003_create_marts.sql` |
 | EDA & Data Profiling 20 คะแนน | ครบ | `notebooks/01_eda_data_profiling.ipynb`, `docs/data_profiling_report.md`, `data/processed/profile_summary.json` |
 | Direct answers 1-4 | ครบ | `docs/assignment_answers.md` |
-| Automated pipeline 60 คะแนน | ครบ | `src/isap_pipeline/cli.py`, `extract_ocsc.py`, `extract_cgd.py`, `clean.py`, `dq.py`, `load.py`, `downloader.py` |
+| Automated pipeline 60 คะแนน | ครบ | `docs/automation_walkthrough.md`, `src/isap_pipeline/cli.py`, `extract_ocsc.py`, `extract_cgd.py`, `clean.py`, `dq.py`, `load.py`, `downloader.py` |
 | Monthly new-data check | มีแล้ว มี caveat | `src/isap_pipeline/discovery.py`, `.github/workflows/monthly-check.yml`, `data/processed/source_check_latest.json` หลังรัน `check-new` |
 | Junior recommendations 20 คะแนน | ครบ | `docs/junior_recommendations.md` |
 | Demo readiness | ครบ | `docs/demo_script.md`, `sql/004_sample_queries.sql` และคำสั่ง rebuild warehouse จาก source Excel |
-| Code explainability | ดี | `docs/code_walkthrough.md`, module แยกตามหน้าที่, มี CLI commands, มี 16 tests |
+| Code explainability | ดี | `docs/code_walkthrough.md`, `docs/automation_walkthrough.md`, module แยกตามหน้าที่, มี CLI commands, มี 16 tests |
 
 ## ผลตรวจล่าสุด
 

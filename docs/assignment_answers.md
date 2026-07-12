@@ -231,23 +231,43 @@ Code quality:
 
 ### Priority 1: ทำ Data Contract และ Schema Versioning
 
-กำหนด expected sheets, header pattern, required fields, data types, units และ release cadence ของแต่ละแหล่ง ถ้าโครงสร้างเปลี่ยนให้จำแนก compatible กับ breaking change ก่อน ingest วิธีนี้ลดความเสี่ยงที่ pipeline รันผ่านแต่ได้ข้อมูลผิดความหมาย
+**ความเสี่ยง:** source เปลี่ยน sheet, header, field หรือหน่วยโดยที่ pipeline ยังรันผ่าน แต่ผลลัพธ์ผิดความหมาย
+
+**เริ่มทำ:** กำหนด expected sheets, header pattern, required fields, data types, units และ release cadence ของแต่ละแหล่ง ให้ schema version บอกว่า change ใดอ่านต่อได้และ change ใดต้องแก้ parser พร้อม Excel fixture สำหรับ integration test
+
+**ผลที่คาดหวัง:** ระบบหยุดก่อน load พร้อมบอกจุดที่เปลี่ยน แทนการเดาข้อมูล
 
 ### Priority 2: สร้าง Government Agency Master
 
-กำหนด agency code กลาง, ministry hierarchy, aliases, effective date และสถานะการจับคู่ การใช้ fuzzy matching ควรสร้าง candidate เพื่อให้คน review ไม่ควร auto-join ลง production เพราะชื่อคล้ายกันอาจเป็นคนละหน่วยงาน
+**ความเสี่ยง:** ชื่อหน่วยงานข้าม OCSC/CGD ไม่ตรงกันครบทุกชื่อ การเทียบข้อความตรงตัวอาจ join หลุดหรือจับคู่ผิด
+
+**เริ่มทำ:** กำหนด agency code กลาง, ministry hierarchy, aliases, effective date และสถานะการจับคู่ ให้ fuzzy matching สร้าง candidate เพื่อให้คน review แต่ไม่ auto-join ลง production
+
+**ผลที่คาดหวัง:** ทุก join ข้าม source มีสถานะตรวจสอบได้ว่ามาจากรหัส, alias หรือยังรอตรวจ
 
 ### Priority 3: เพิ่ม Reconciliation, Monitoring และ Alerting
 
-ตรวจผลรวม detail เทียบ total/subtotal ที่ต้นทางเผยแพร่ด้วย tolerance ที่กำหนด แยก warning จาก blocking error เพราะข้อมูลจริงอาจมี rounding หรือ business exception และติดตาม run duration, row-count trend, DQ failures, schema fingerprint และ source availability พร้อม alert เมื่อผิดจาก baseline การมี schedule อย่างเดียวไม่เพียงพอถ้าไม่มีคนรู้ว่า job ล้ม
+**ความเสี่ยง:** job อาจจบโดยไม่มี error แต่ยอดรวมไม่ตรง, row count ลดผิดปกติ หรือ source เข้าไม่ได้โดยไม่มีใครรู้
+
+**เริ่มทำ:** ตรวจผลรวม detail เทียบ total/subtotal ด้วย tolerance ที่ตกลงกัน เก็บ run duration, row-count trend, DQ failures, schema fingerprint และ source availability พร้อม alert เมื่อผิดจาก baseline
+
+**ผลที่คาดหวัง:** ทีมรู้ในรอบที่ปัญหาเกิด และแยก data issue, source issue กับ code issue ได้เร็ว
 
 ### Priority 4: ทำ Immutable Raw Zone, Lineage และ Release Policy
 
-เก็บไฟล์ต้นฉบับใน object storage แบบ write-once พร้อม SHA-256, source URL, checked time และ retention policy เพื่อ replay/rebuild ได้ และทำให้ตอบได้ว่าตัวเลขใน mart มาจาก release ใด กำหนดด้วยว่าจะจัดการ backfill, correction และ revision อย่างไร เพื่อไม่ให้ analyst สับสนระหว่าง latest snapshot กับประวัติย้อนหลัง
+**ความเสี่ยง:** เมื่อ source แก้ย้อนหลังหรือมีคำถามถึงตัวเลขเดิม ทีมอาจหาไฟล์ต้นทางหรือ rebuild ผลเดิมไม่ได้
+
+**เริ่มทำ:** เก็บไฟล์ต้นฉบับแบบ write-once พร้อม SHA-256, source URL, checked time และ retention policy กำหนด policy ของ backfill, correction และ revision ว่าจะ replace หรือเก็บหลาย version
+
+**ผลที่คาดหวัง:** ตอบได้ว่าตัวเลขใน mart มาจาก release/run ใด และ replay/rebuild ได้เมื่อ source เปลี่ยน
 
 ### Priority 5: ทำ Semantic Layer และวาง Production Migration ตามการใช้งานจริง
 
-ตกลงนิยามคำว่า เบิกจ่าย, ใช้จ่าย, จัดสรร, PO, กำลังพล และ ratio ข้ามแหล่งก่อนสร้าง dashboard และทำ data dictionary ร่วมกับ analyst เพื่อหลีกเลี่ยง metric ที่ดูคำนวณได้แต่เปรียบเทียบคนละช่วงเวลา หรือคนละ entity scope DuckDB เหมาะกับ take-home และ single-user local analysis; หากมี concurrent users, SLA, access control หรือข้อมูลหลายปีจำนวนมาก ค่อยย้าย storage/compute ไป platform ที่รองรับ โดยคง raw/staging/mart contract และ automated tests เดิม
+**ความเสี่ยง:** analyst อาจใช้คำว่าเบิกจ่าย, ใช้จ่าย, จัดสรร หรือ ratio คนละความหมาย และ DuckDB จะไม่เหมาะเมื่อมี concurrent users หรือ SLA จริง
+
+**เริ่มทำ:** ตกลงนิยาม metric และทำ data dictionary ร่วมกับ analyst สร้าง view/semantic layer สำหรับคำถามที่ใช้บ่อย แยก secrets/config ออกจาก code และกำหนดเกณฑ์ย้าย platform จาก concurrent users, SLA, access control หรือปริมาณข้อมูล
+
+**ผลที่คาดหวัง:** dashboard ใช้นิยามเดียวกัน และทีมขยายระบบตามความต้องการจริงโดยยังคง raw/staging/mart contract กับ tests เดิม
 
 รายการเต็มอยู่ใน `docs/junior_recommendations.md`
 

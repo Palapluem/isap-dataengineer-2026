@@ -376,6 +376,134 @@ on:
 
 tests ปัจจุบันครอบคลุม date conversion, header normalization, OCSC/CGD transforms, DQ, idempotency, manifest comparison, ZIP extraction และ sync orchestration
 
+## 12. Tests: ทดสอบอะไรโดยไม่ใช้ PowerShell
+
+คำสั่งทดสอบหลักคือ:
+
+```powershell
+python -m pytest
+```
+
+หากต้องการตรวจเฉพาะ behavior สำคัญโดยไม่รันทั้งชุด:
+
+```powershell
+python -m pytest tests/test_cgd_transform.py -q
+python -m pytest tests/test_idempotency.py -q
+python -m pytest tests/test_sync_latest.py -q
+```
+
+ชุดทดสอบเป็น Python `pytest` โดยตรง ไม่เรียก `.ps1`, ไม่เปิด terminal แบบ interactive และไม่ต้องเข้าถึงเว็บไซต์จริง แต่ละ test สร้างไฟล์ Excel/ZIP/warehouse ชั่วคราวของตัวเองใน `tmp_path` แล้วลบทิ้งเมื่อจบ จึงรันซ้ำได้เหมือนกันบนเครื่อง developer และ GitHub Actions
+
+| กลุ่มที่ทดสอบ | ไฟล์ | จำนวน | สิ่งที่พิสูจน์ |
+|---|---:|---:|---|
+| Clean และ header | `test_header_normalization.py` | 4 | newline/ช่องว่าง, synonym, error token และเลขลำดับหน้าชื่อหน่วยงานถูกจัดการตามกฎเดียวกัน |
+| วันที่ไทย | `test_date_conversion.py` | 2 | พ.ศ. 2569 กลายเป็น ค.ศ. 2026 และ parse วันที่ไทยได้ |
+| OCSC parser | `test_ocsc_transform.py` | 2 | เก็บ context กระทรวง, แปลง metric และไม่เอาแถว `ร้อยละ` ไปเป็น headcount |
+| CGD parser | `test_cgd_transform.py` | 2 | unpivot `ประจำ/ลงทุน/รวม`, เก็บ total row และแยกชื่อ sheet ใช้จ่ายที่ถูกตัด |
+| Data quality | `test_data_quality.py` | 1 | เมื่อ published total ไม่เท่าผลรวม detail ต้องมี reconciliation issue |
+| Idempotent load | `test_idempotency.py` | 1 | โหลด file hash เดิมสองครั้งแล้ว mart row count ไม่เพิ่ม |
+| Release discovery | `test_discovery.py` | 2 | manifest เดิมเป็น `no_new_data`; filename ใหม่เป็น `new_data_found` |
+| Download safety | `test_downloader.py` | 1 | แตก ZIP โดยเก็บเฉพาะ basename ของ Excel file |
+| Sync orchestration | `test_sync_latest.py` | 1 | download ทั้งสอง source ก่อนเรียก load และส่ง path ที่ถูกต้องเข้า pipeline |
+
+รวม 16 tests ใน 9 ไฟล์
+
+### ตัวอย่าง 1: ตรวจ conversion ก่อนให้ parser ใช้
+
+ไฟล์: [`tests/test_header_normalization.py`](../tests/test_header_normalization.py)
+
+```python
+def test_to_number_handles_report_tokens() -> None:
+    assert to_number("1,234.50") == 1234.5
+    assert to_number("#REF!") is None
+
+def test_canonical_entity_name_strips_order_prefix() -> None:
+    assert canonical_entity_name("1. สำนักนายกรัฐมนตรี") == "สำนักนายกรัฐมนตรี"
+```
+
+สิ่งที่พิสูจน์: Excel error ไม่กลายเป็นศูนย์แบบเงียบ ๆ และชื่อหน่วยงานที่มีเลขนำหน้าจะ join/query ได้สม่ำเสมอ
+
+### ตัวอย่าง 2: ตรวจ OCSC ไม่เอาร้อยละเป็นจำนวนคน
+
+ไฟล์: [`tests/test_ocsc_transform.py`](../tests/test_ocsc_transform.py)
+
+```python
+result = extract_ocsc_workbook(path, meta, "run-1").workforce_profile
+
+assert not (result["agency_name"] == "ร้อยละ").any()
+assert (result["agency_name"] == "รวมทั้งหมด").any()
+```
+
+สิ่งที่พิสูจน์: parser ตัด summary percentage ที่ตีความเป็น headcount ไม่ได้ แต่ยังรักษา total row ไว้สำหรับตรวจสอบยอด
+
+### ตัวอย่าง 3: ตรวจ CGD unpivot และ total row
+
+ไฟล์: [`tests/test_cgd_transform.py`](../tests/test_cgd_transform.py)
+
+```python
+result = extract_cgd_workbook(path, meta, "run-1").budget_execution
+
+agency_total = result[
+    (result["entity_name"] == "กรมบัญชีกลาง")
+    & (result["expense_category"] == "total")
+].iloc[0]
+published_total = result[
+    (result["entity_type"] == "total")
+    & (result["expense_category"] == "total")
+].iloc[0]
+
+assert len(result) == 6
+assert agency_total["disbursement_million_baht"] == 90
+assert published_total["entity_type"] == "total"
+```
+
+สิ่งที่พิสูจน์: ตาราง wide ที่มี 3 expense groups ถูกแปลงเป็น long rows ตามที่คาด และ row `รวม` ยังถูกระบุว่าเป็น total ไม่ใช่ agency detail
+
+### ตัวอย่าง 4: ตรวจรันซ้ำแล้วไม่มีข้อมูลซ้ำ
+
+ไฟล์: [`tests/test_idempotency.py`](../tests/test_idempotency.py)
+
+```python
+for run_id in ["run-1", "run-2"]:
+    load_dataframes(
+        warehouse,
+        run_id=run_id,
+        source_files=source_files,
+        workbook_sheets=workbook_sheets,
+        raw_cells=raw_cells.assign(ingestion_run_id=run_id),
+        cgd_budget_execution=cgd.assign(ingestion_run_id=run_id),
+        ocsc_workforce=ocsc.assign(ingestion_run_id=run_id),
+        dq_issues=dq.assign(ingestion_run_id=run_id),
+    )
+
+assert con.execute(
+    "select count(*) from mart.fact_budget_execution"
+).fetchone()[0] == 1
+```
+
+สิ่งที่พิสูจน์: ต่อให้ pipeline ถูกเรียกสองครั้ง แต่ source file hash เดิมจะถูก replace ก่อน insert จึงไม่เกิด duplicate ใน mart
+
+### ตัวอย่าง 5: ตรวจ decision ของ monthly sync โดยไม่เรียกเว็บจริง
+
+ไฟล์: [`tests/test_discovery.py`](../tests/test_sync_latest.py)
+
+```python
+result = compare_with_manifest(
+    [_discovered("2026.08.01.xlsx", "2026-08-01")], manifest
+)
+assert result["sources"][0]["status"] == "new_data_found"
+```
+
+```python
+monkeypatch.setattr(cli, "download_file", fake_download)
+monkeypatch.setattr(cli, "command_run", fake_run)
+
+result = cli.command_sync_latest(tmp_path / "raw", warehouse)
+assert result == 0
+```
+
+สิ่งที่พิสูจน์: กฎเปรียบเทียบ manifest และลำดับ download -> load ถูกตรวจได้แบบ deterministic โดยไม่รอ network หรือหน้าเว็บต้นทาง
+
 ## สรุปสำหรับการตอบในห้องสัมภาษณ์
 
 > Automation ของงานนี้ไม่ใช่แค่ตั้งเวลา run ครับ แต่เริ่มจากตรวจว่ามีไฟล์ใหม่จริงหรือไม่, หยุดอย่างปลอดภัยเมื่อเว็บเข้าถึงไม่ได้, อ่าน source-specific layout, ตรวจคุณภาพข้อมูล, โหลดด้วย file hash เพื่อไม่ให้ข้อมูลซ้ำ และมี tests/CI คอยตรวจ logic ทุกครั้งที่ code เปลี่ยน

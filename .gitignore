@@ -27,14 +27,17 @@ src/*.egg-info/
 # Private/internal reference material.
 references/
 
-# AI agent working prompt for this assignment; keep local only.
+# Local authoring material that is not part of the submission.
 assignment/ISAP_DATA_ENG_AGENT_PROMPT.md
+docs/presentation_*.md
+/*.pdf
+/*_logo.png
+/README_*.md
 
 # Local helpers used while authoring the submission are not deliverables.
 scripts/
 
-# Interview speaking notes stay local; the public repository keeps only runnable evidence.
-docs/presentation_guide.md
+# Local helpers and visual working files stay local; the public repository keeps runnable evidence.
 presentation_assets/
 
 data/raw/*

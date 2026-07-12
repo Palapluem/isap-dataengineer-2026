@@ -11,7 +11,7 @@
 | แผนผัง warehouse และความหมายของตาราง | `docs/warehouse_design.md`, `docs/data_dictionary.md` |
 | คำศัพท์ทางเทคนิคแบบภาษาง่าย | `docs/terms_explained.md` |
 | หลักฐาน EDA ของ OCSC และ CGD | `notebooks/01_eda_data_profiling.ipynb`, `docs/data_profiling_report.md` |
-| คำสั่ง pipeline, ผลที่ควรเห็น และ demo | `README.md`, `docs/demo_script.md` |
+| คำสั่ง pipeline, ผลที่ควรเห็น และ demo | `README.md`, `sql/004_sample_queries.sql` |
 | Code ของ automation แบบทีละขั้น | `docs/automation_walkthrough.md` |
 
 ## ขอบเขตข้อมูลที่ใช้
@@ -223,7 +223,7 @@ Code quality:
 
 สมมติฐานคือ workbook release ใหม่มีโครงสร้าง semantic เดิมตามโจทย์ ถ้า official page ใช้ client-side rendering หรือป้องกัน bot จนหา direct file URL ไม่ได้ `sync-latest` จะหยุดด้วย exit code 1 และเก็บผล `source_unavailable` โดยไม่อัปเดต manifest และไม่ทำ partial load
 
-คำสั่งหลักและ expected output อยู่ใน `docs/demo_script.md`
+คำสั่งหลักและ expected output อยู่ใน `README.md` และ `sql/004_sample_queries.sql`
 
 ## ข้อ 4: ข้อเสนอแนะจาก Junior ต่อ Senior Data Engineer (20 คะแนน)
 

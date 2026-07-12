@@ -86,8 +86,8 @@ repository นี้ตั้งใจเก็บเฉพาะสิ่งท
 | เก็บใน GitHub | ไม่เก็บใน GitHub |
 |---|---|
 | code, SQL, tests, docs, notebook และ workflow | `data/warehouse/*.duckdb` และ generated JSON |
-| Excel baseline ขนาดเล็กสำหรับ demo | `references/` ซึ่งเป็นข้อมูลภายใน |
-| PDF โจทย์ต้นฉบับที่อนุญาตให้เผยแพร่ | agent prompt, editor state, local environment และ local helper files |
+| Excel baseline ขนาดเล็กสำหรับ demo | local editor state, authoring notes และ local helper files |
+| PDF โจทย์ต้นฉบับที่อนุญาตให้เผยแพร่ | generated warehouse output |
 
 ไฟล์ `.duckdb` ไม่ใช่ source of truth แต่เป็นผลลัพธ์จาก pipeline จึงควรสร้างใหม่จาก Excel กับ code ทุกครั้ง วิธีนี้ทำให้ reviewer ตรวจ reproducibility ได้ และลดความเสี่ยงที่ไฟล์ warehouse เก่าจะไม่ตรงกับ code เวอร์ชันล่าสุด
 
@@ -208,7 +208,7 @@ python -m isap_pipeline sync-latest --warehouse "data/warehouse/isap.duckdb"
 | Data dictionary | [docs/data_dictionary.md](docs/data_dictionary.md) |
 | คำศัพท์เทคนิคแบบภาษาง่าย | [docs/terms_explained.md](docs/terms_explained.md) |
 | EDA และปัญหาของแต่ละ dataset | [notebooks/01_eda_data_profiling.ipynb](notebooks/01_eda_data_profiling.ipynb), [docs/data_profiling_report.md](docs/data_profiling_report.md) |
-| คำสั่งและผลที่ควรเห็น | [docs/demo_script.md](docs/demo_script.md) |
+| คำสั่ง setup, run, demo และ test | [README.md](README.md), [sql/004_sample_queries.sql](sql/004_sample_queries.sql) |
 | Code ของ automation อธิบายทีละขั้น | [docs/automation_walkthrough.md](docs/automation_walkthrough.md) |
 | ข้อเสนอแนะต่อ Senior Data Engineer | [docs/junior_recommendations.md](docs/junior_recommendations.md) |
 

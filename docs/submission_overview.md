@@ -57,7 +57,7 @@ flowchart LR
 | EDA and Data Profiling | `notebooks/01_eda_data_profiling.ipynb`, `docs/data_profiling_report.md` | แยก OCSC และ CGD ชัดเจน พร้อม workbook/sheet-level profiling |
 | Automated Data Pipeline | `src/isap_pipeline/`, `docs/automation_walkthrough.md`, `sql/`, `.github/workflows/ci.yml`, `.github/workflows/monthly-check.yml` | มี extraction, cleaning, loading, DQ, idempotency, source monitoring และ tests |
 | Junior Recommendations | `docs/junior_recommendations.md` | ข้อเสนอ production readiness จากมุม Junior Data Engineer |
-| Demo Readiness | `README.md`, `docs/demo_script.md`, `sql/004_sample_queries.sql` | มีคำสั่ง setup/profile/run/demo/test ที่รันตามได้ |
+| Reproducible execution | `README.md`, `sql/004_sample_queries.sql` | มีคำสั่ง setup/profile/run/demo/test ที่รันตามได้ |
 
 ## Artifact Policy
 
@@ -67,8 +67,6 @@ flowchart LR
 | Small source Excel datasets used for demo | Yes | ทำให้ reviewer clone แล้วรัน pipeline ได้ทันที |
 | `data/warehouse/*.duckdb` | No | เป็น generated warehouse output; ควร rebuild จาก code + source data เพื่อพิสูจน์ reproducibility |
 | `data/processed/*.json` | No | เป็น generated profiling/DQ/source-check output; command สามารถสร้างใหม่ได้ |
-| `references/` | No | เป็น internal/private reference material |
-| agent prompt / working brief | No | เป็น local working artifact ไม่ใช่ deliverable |
 | original assignment PDF | Yes | เจ้าของงานยืนยันว่าเผยแพร่ได้และช่วยให้ผู้ตรวจเทียบคำตอบกับโจทย์ต้นฉบับ |
 
 ## Why Ignore `.duckdb`

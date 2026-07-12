@@ -1,5 +1,9 @@
 # ISAP Data Engineer Take-Home Test
 
+<div align="center">
+  <img height="72" alt="Innosoft logo" src="docs/assets/innosoft_logo.png" />
+</div>
+
 โปรเจกต์นี้เป็นคำตอบสำหรับโจทย์ Innosoft Student Associate Program สาย Data Engineer งานมีเป้าหมายชัดเจน: เปลี่ยน Excel report จากสำนักงาน ก.พ. และกรมบัญชีกลางให้เป็นข้อมูลที่ตรวจสอบที่มาได้ รันซ้ำได้ และส่งต่อให้ Data Analyst ใช้ SQL วิเคราะห์ได้สะดวก
 
 ผลลัพธ์หลักเป็น local data pipeline ที่ใช้ Python และ DuckDB จึงเปิดดูและสาธิตได้บนเครื่องเดียว โดยไม่ต้องติดตั้ง database server
@@ -58,7 +62,7 @@ isap-data-eng-take-home-test/
 ├── datasets/                   # Excel baseline สำหรับรัน demo
 │   ├── cgd/
 │   └── ocsc/
-├── docs/                       # คำตอบ, design, demo และแนวทางนำเสนอ
+├── docs/                       # คำตอบ, design และเอกสารประกอบ
 ├── notebooks/                  # EDA notebook ที่รันซ้ำได้
 ├── sql/                        # DDL และ analytical SQL
 ├── src/isap_pipeline/          # production-style pipeline package

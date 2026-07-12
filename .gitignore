@@ -29,6 +29,9 @@ references/
 # AI agent working prompt for this assignment; keep local only.
 assignment/ISAP_DATA_ENG_AGENT_PROMPT.md
 
+# Local helpers used while authoring the submission are not deliverables.
+scripts/
+
 data/raw/*
 !data/raw/.gitkeep
 data/processed/*

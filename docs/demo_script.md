@@ -1,5 +1,26 @@
 # Demo Script
 
+## Interview Automation Demo (3 นาที)
+
+สำหรับสัมภาษณ์ ให้ใช้ warehouse ชั่วคราวคนละไฟล์กับที่เปิดใน GUI เพื่อไม่ชนกับ file lock และให้เตรียม terminal ไว้ที่ repository root ก่อนเริ่ม
+
+```powershell
+$warehouse = "data/warehouse/interview_demo.duckdb"
+Remove-Item -LiteralPath $warehouse -ErrorAction SilentlyContinue
+python -m pytest
+python -m isap_pipeline run --ocsc "datasets/ocsc/thai-gov-manpower-2567.4.xlsx" --cgd "datasets/cgd/2026.07.03.xlsx" --warehouse $warehouse
+python -m isap_pipeline run --ocsc "datasets/ocsc/thai-gov-manpower-2567.4.xlsx" --cgd "datasets/cgd/2026.07.03.xlsx" --warehouse $warehouse
+python -m isap_pipeline demo --warehouse $warehouse
+```
+
+ระหว่าง demo ให้ชี้เพียง 3 เรื่อง:
+
+1. `pytest` ผ่าน เพื่อยืนยันกฎ cleaning, parser และ idempotency ที่สำคัญ
+2. การรัน pipeline รอบแรกและรอบที่สองให้จำนวน normalized rows เท่าเดิม จึงไม่เกิด duplicate เมื่อไฟล์เดิมเข้ามาซ้ำ
+3. `demo` query อ่านจาก mart ได้จริง และมี filter ที่คุม grain ของข้อมูล
+
+ไม่แนะนำให้ใช้ `check-new` หรือ `sync-latest` เป็นเส้นทางหลักของ live demo เพราะขึ้นกับเว็บไซต์ภายนอก ให้เปิด `data/processed/source_check_latest.json` หรืออธิบายสถานะ `source_unavailable` เป็นแผนสำรองแทน
+
 ## 1. Setup
 
 ```powershell

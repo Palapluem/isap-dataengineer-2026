@@ -2,6 +2,16 @@
 
 เอกสารนี้ตอบคำถามตามลำดับและน้ำหนักคะแนนในข้อสอบโดยตรง ส่วนรายละเอียดเชิงลึกและหลักฐานที่รันได้เชื่อมไปยัง code, SQL, notebook และเอกสารประกอบใน repository
 
+## แผนที่คำตอบ
+
+| ถ้าต้องการดู | เปิดไฟล์นี้ |
+|---|---|
+| คำตอบครบทั้ง 4 ข้อแบบเรียงตามโจทย์ | เอกสารนี้ |
+| ภาพรวม deliverable และสิ่งที่ commit | `docs/submission_overview.md` |
+| แผนผัง warehouse และความหมายของตาราง | `docs/warehouse_design.md`, `docs/data_dictionary.md` |
+| หลักฐาน EDA ของ OCSC และ CGD | `notebooks/01_eda_data_profiling.ipynb`, `docs/data_profiling_report.md` |
+| คำสั่ง pipeline, ผลที่ควรเห็น และ demo | `README.md`, `docs/demo_script.md` |
+
 ## ขอบเขตข้อมูลที่ใช้
 
 - OCSC: `thai-gov-manpower-2567.4.xlsx` ข้อมูลกำลังพลภาครัฐ ปีงบประมาณ พ.ศ. 2567 จำนวน 68 sheets

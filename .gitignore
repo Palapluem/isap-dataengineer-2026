@@ -32,6 +32,9 @@ assignment/ISAP_DATA_ENG_AGENT_PROMPT.md
 # Local helpers used while authoring the submission are not deliverables.
 scripts/
 
+# Interview speaking notes stay local; the public repository keeps only runnable evidence.
+docs/presentation_guide.md
+
 data/raw/*
 !data/raw/.gitkeep
 data/processed/*

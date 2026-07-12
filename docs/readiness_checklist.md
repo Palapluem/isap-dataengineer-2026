@@ -21,7 +21,6 @@
 | Junior recommendations 20 คะแนน | ครบ | `docs/junior_recommendations.md` |
 | Demo readiness | ครบ | `docs/demo_script.md`, `sql/004_sample_queries.sql`, `data/warehouse/isap.duckdb` |
 | Code explainability | ดี | `docs/code_walkthrough.md`, module แยกตามหน้าที่, มี CLI commands, มี 16 tests |
-| Presentation readiness | ครบ | `docs/presentation_guide.md`, `docs/demo_script.md` |
 
 ## Current Validation Snapshot
 

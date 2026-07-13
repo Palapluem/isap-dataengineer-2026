@@ -158,7 +158,7 @@ def command_check_new(save: bool = False) -> int:
         encoding="utf-8",
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0
+    return 1 if any(item["status"] == "source_unavailable" for item in result["sources"]) else 0
 
 def command_sync_latest(download_dir: Path, warehouse_path: Path) -> int:
     cfg = load_pipeline_config()

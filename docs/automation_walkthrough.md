@@ -362,7 +362,7 @@ CI รันทุก push และ pull request:
   run: python -m pytest
 ```
 
-monthly workflow ตั้งใจรันวันที่ 1 ของทุกเดือน เวลา 02:00 ตามเวลาไทย (`Asia/Bangkok`) และอัปโหลด JSON หลักฐานของผลตรวจ แม้ command จะล้มเหลว GitHub Actions ใช้ cron แบบ UTC จึงเปิด window ที่ 19:00 UTC ของวันที่ 28-31 แล้ว gate ด้วยวันที่ Bangkok เพื่อเลือกเฉพาะ 02:00 ของวันที่ 1; การกด manual dispatch รันได้ทุกวัน:
+monthly workflow ตั้งใจรันวันที่ 1 ของทุกเดือน เวลา 02:00 ตามเวลาไทย (`Asia/Bangkok`) และอัปโหลด JSON หลักฐานของผลตรวจ แม้ command จะล้มเหลว GitHub Actions ใช้ cron แบบ UTC จึงเปิด window ที่ 19:00 UTC ของวันที่ 28-31 แล้ว gate ด้วยวันที่ Bangkok เพื่อเลือกเฉพาะ 02:00 ของวันที่ 1; การกด manual dispatch รันได้ทุกวัน ถ้า source ใด unavailable, `check-new` คืน exit code 1 เพื่อให้ run เป็น failure/alert แทนการเป็นสีเขียวโดยไม่มีข้อมูล:
 
 ```yaml
 on:
@@ -396,7 +396,7 @@ python -m pytest
 ```powershell
 python -m pytest tests/test_cgd_transform.py -q
 python -m pytest tests/test_idempotency.py -q
-python -m pytest tests/test_sync_latest.py -q
+python -m pytest tests/test_sync_latest.py tests/test_sync_latest_end_to_end.py -q
 ```
 
 ชุดทดสอบเป็น Python `pytest` โดยตรง ไม่เรียก `.ps1`, ไม่เปิด terminal แบบ interactive และไม่ต้องเข้าถึงเว็บไซต์จริง แต่ละ test สร้างไฟล์ Excel/ZIP/warehouse ชั่วคราวของตัวเองใน `tmp_path` แล้วลบทิ้งเมื่อจบ จึงรันซ้ำได้เหมือนกันบนเครื่อง developer และ GitHub Actions
@@ -411,9 +411,11 @@ python -m pytest tests/test_sync_latest.py -q
 | Idempotent load | `test_idempotency.py` | 1 | โหลด file hash เดิมสองครั้งแล้ว mart row count ไม่เพิ่ม |
 | Release discovery | `test_discovery.py` | 2 | manifest เดิมเป็น `no_new_data`; filename ใหม่เป็น `new_data_found` |
 | Download safety | `test_downloader.py` | 1 | แตก ZIP โดยเก็บเฉพาะ basename ของ Excel file |
+| Source availability | `test_source_check.py` | 1 | `source_unavailable` เขียนหลักฐานและคืน exit code 1 เพื่อ alert |
 | Sync orchestration | `test_sync_latest.py` | 1 | download ทั้งสอง source ก่อนเรียก load และส่ง path ที่ถูกต้องเข้า pipeline |
+| End-to-end sync | `test_sync_latest_end_to_end.py` | 1 | ดาวน์โหลดผ่าน local HTTP, parse OCSC/CGD, DQ, load DuckDB และ save manifest ครบเส้น |
 
-รวม 16 tests ใน 9 ไฟล์
+รวม 18 tests ใน 11 ไฟล์
 
 ### ตัวอย่าง 1: ตรวจ conversion ก่อนให้ parser ใช้
 
@@ -492,7 +494,7 @@ assert con.execute(
 
 ### ตัวอย่าง 5: ตรวจ decision ของ monthly sync โดยไม่เรียกเว็บจริง
 
-ไฟล์: [`tests/test_discovery.py`](../tests/test_sync_latest.py)
+ไฟล์: [`tests/test_discovery.py`](../tests/test_discovery.py), [`tests/test_sync_latest.py`](../tests/test_sync_latest.py)
 
 ```python
 result = compare_with_manifest(
@@ -509,7 +511,7 @@ result = cli.command_sync_latest(tmp_path / "raw", warehouse)
 assert result == 0
 ```
 
-สิ่งที่พิสูจน์: กฎเปรียบเทียบ manifest และลำดับ download -> load ถูกตรวจได้แบบ deterministic โดยไม่รอ network หรือหน้าเว็บต้นทาง
+สิ่งที่พิสูจน์: กฎเปรียบเทียบ manifest และลำดับ download -> load ถูกตรวจได้แบบ deterministic โดยไม่รอ network หรือหน้าเว็บต้นทาง ส่วน `test_sync_latest_end_to_end.py` พิสูจน์เส้น download -> parse -> DQ -> DuckDB ด้วย HTTP server ในเครื่อง
 
 ## สรุปสำหรับการตอบในห้องสัมภาษณ์
 

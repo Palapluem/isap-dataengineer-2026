@@ -202,7 +202,7 @@ Code quality:
 
 - module แยกตามหน้าที่และมี CLI entry point
 - `ruff` ตรวจ style/static issues
-- `pytest` ปัจจุบันมี 16 tests ครอบคลุม date conversion, header normalization, source transforms, total-row handling, reconciliation, idempotency, manifest comparison, ZIP extraction และ sync orchestration
+- `pytest` ปัจจุบันมี 18 tests ครอบคลุม date conversion, header normalization, source transforms, total-row handling, reconciliation, idempotency, manifest comparison, ZIP extraction, source-unavailable alert และ end-to-end sync ผ่าน local HTTP server
 - GitHub Actions รัน lint และ tests ทุก push/PR
 
 ### 3b ตรวจข้อมูลใหม่ทุกเดือน (10 คะแนน)
@@ -213,6 +213,7 @@ Code quality:
 - คืนสถานะ `no_new_data`, `new_data_found` หรือ `source_unavailable`
 - เก็บ `source_check_latest.json` เป็น GitHub Actions artifact เพื่อให้มีหลักฐานจากแต่ละรอบ
 - การแยก `source_unavailable` สำคัญ เพราะ network failure ไม่ควรถูกตีความเป็น no new data
+- ถ้า source ใด unavailable, `check-new` คืน exit code 1 เพื่อให้ GitHub Actions แสดงรอบตรวจเป็นปัญหา แต่ artifact ยังคงถูกอัปโหลดเพื่อ debug
 
 ### 3c Ingest Dataset ใหม่ที่โครงสร้างเดิม (10 คะแนน)
 
@@ -221,7 +222,7 @@ Code quality:
 1. รัน `python -m isap_pipeline run --ocsc <new_ocsc.xlsx> --cgd <new_cgd.xlsx> --warehouse <path>` เมื่อต้องการควบคุมไฟล์เอง
 2. รัน `python -m isap_pipeline sync-latest` เพื่อ discover, download, แตก ZIP หากจำเป็น, ingest ทั้งสองแหล่ง และอัปเดต manifest หลัง load สำเร็จ
 
-สมมติฐานคือ workbook release ใหม่มีโครงสร้าง semantic เดิมตามโจทย์ ถ้า official page ใช้ client-side rendering หรือป้องกัน bot จนหา direct file URL ไม่ได้ `sync-latest` จะหยุดด้วย exit code 1 และเก็บผล `source_unavailable` โดยไม่อัปเดต manifest และไม่ทำ partial load
+สมมติฐานคือ workbook release ใหม่มีโครงสร้าง semantic เดิมตามโจทย์ `tests/test_sync_latest_end_to_end.py` ใช้ HTTP server ในเครื่อง serve Excel OCSC/CGD แล้วพิสูจน์ว่า `sync-latest` ดาวน์โหลดไฟล์จริง, parse, ทำ DQ, load DuckDB และบันทึก manifest ได้ครบเส้น. ถ้า official page ใช้ client-side rendering หรือป้องกัน bot จนหา direct file URL ไม่ได้ `sync-latest` จะหยุดด้วย exit code 1 และเก็บผล `source_unavailable` โดยไม่อัปเดต manifest และไม่ทำ partial load
 
 คำสั่งหลักและ expected output อยู่ใน `README.md` และ `sql/004_sample_queries.sql`
 
@@ -295,6 +296,6 @@ Code quality:
 | CGD staging/mart rows | 2,937 |
 | OCSC staging/mart rows | 5,784 |
 | Core DQ issues | 0 |
-| Automated tests | 16 passed |
+| Automated tests | 18 passed |
 
 ตัวเลขนี้เป็น snapshot จากไฟล์ submission baseline และสามารถสร้างใหม่ได้ด้วยคำสั่งใน `README.md`

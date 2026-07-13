@@ -178,7 +178,7 @@ python -m ruff check .
 python -m pytest
 ```
 
-ปัจจุบันมี 16 tests ครอบคลุมการแปลงวันที่, header/text cleaning, parser ของแต่ละ source, total-row handling, reconciliation, idempotency, manifest comparison, ZIP extraction และ sync orchestration GitHub Actions จะรัน lint และ tests ทุก push/PR
+ปัจจุบันมี 18 tests ครอบคลุมการแปลงวันที่, header/text cleaning, parser ของแต่ละ source, total-row handling, reconciliation, idempotency, manifest comparison, ZIP extraction, source-unavailable alert และ end-to-end sync ผ่าน local HTTP server GitHub Actions จะรัน lint และ tests ทุก push/PR
 
 ## Monitoring New Releases
 

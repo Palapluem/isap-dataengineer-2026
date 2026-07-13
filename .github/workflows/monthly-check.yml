@@ -2,23 +2,41 @@ name: Monthly ISAP Source Check
 
 on:
   schedule:
-    - cron: "0 2 1 * *"
+    # GitHub Actions cron uses UTC. This window contains 02:00 on the first
+    # day of the next month in Asia/Bangkok; the first step below gates it.
+    - cron: "0 19 28-31 * *"
   workflow_dispatch:
 
 jobs:
   check-new-data:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Check Bangkok schedule
+        id: bangkok_schedule
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] || [ "$(TZ=Asia/Bangkok date +%d)" = "01" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "Running at $(TZ=Asia/Bangkok date '+%Y-%m-%d %H:%M %Z')."
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: this scheduled window is not 02:00 on the first day in Bangkok."
+          fi
+      - if: steps.bangkok_schedule.outputs.should_run == 'true'
+        uses: actions/checkout@v4
+      - if: steps.bangkok_schedule.outputs.should_run == 'true'
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install project
+        if: steps.bangkok_schedule.outputs.should_run == 'true'
         run: python -m pip install -e ".[dev]"
       - name: Check official sources
+        if: steps.bangkok_schedule.outputs.should_run == 'true'
         run: python -m isap_pipeline check-new
       - name: Upload source-check evidence
-        if: always()
+        if: always() && steps.bangkok_schedule.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: source-check-${{ github.run_number }}

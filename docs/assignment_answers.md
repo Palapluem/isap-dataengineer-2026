@@ -207,7 +207,7 @@ Code quality:
 
 ### 3b ตรวจข้อมูลใหม่ทุกเดือน (10 คะแนน)
 
-- `.github/workflows/monthly-check.yml` รันวันที่ 1 ของทุกเดือน เวลา 02:00 UTC และสั่งรันเองได้
+- `.github/workflows/monthly-check.yml` ตั้งใจรันวันที่ 1 ของทุกเดือน เวลา 02:00 ตามเวลาไทย (`Asia/Bangkok`) และสั่งรันเองได้ทุกวัน
 - `check-new` อ่าน URL จาก `config/sources.yml`
 - เทียบ filename, publish date และ file URL กับ `config/source_manifest.json`
 - คืนสถานะ `no_new_data`, `new_data_found` หรือ `source_unavailable`

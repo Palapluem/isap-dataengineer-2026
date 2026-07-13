@@ -362,15 +362,22 @@ CI รันทุก push และ pull request:
   run: python -m pytest
 ```
 
-monthly workflow รันวันที่ 1 ของทุกเดือน เวลา 02:00 UTC และอัปโหลด JSON หลักฐานของผลตรวจ แม้ command จะล้มเหลว:
+monthly workflow ตั้งใจรันวันที่ 1 ของทุกเดือน เวลา 02:00 ตามเวลาไทย (`Asia/Bangkok`) และอัปโหลด JSON หลักฐานของผลตรวจ แม้ command จะล้มเหลว GitHub Actions ใช้ cron แบบ UTC จึงเปิด window ที่ 19:00 UTC ของวันที่ 28-31 แล้ว gate ด้วยวันที่ Bangkok เพื่อเลือกเฉพาะ 02:00 ของวันที่ 1; การกด manual dispatch รันได้ทุกวัน:
 
 ```yaml
 on:
   schedule:
-    - cron: "0 2 1 * *"
+    - cron: "0 19 28-31 * *"
+
+- name: Check Bangkok schedule
+  id: bangkok_schedule
+  run: |
+    if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$(TZ=Asia/Bangkok date +%d)" = "01" ]; then
+      echo "should_run=true" >> "$GITHUB_OUTPUT"
+    fi
 
 - name: Upload source-check evidence
-  if: always()
+  if: always() && steps.bangkok_schedule.outputs.should_run == 'true'
   uses: actions/upload-artifact@v4
 ```
 
